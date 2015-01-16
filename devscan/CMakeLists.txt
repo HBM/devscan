@@ -9,7 +9,9 @@ else(HBM_TARGETS)
 endif(HBM_TARGETS)
 
 
-add_subdirectory(device ${PROJECT_BINARY_DIR}/device)
+if(HBM_TARGETS)
+  add_subdirectory(device ${PROJECT_BINARY_DIR}/device)
+endif(HBM_TARGETS)
 
 if(scanclient_package)
   add_subdirectory(client ${PROJECT_BINARY_DIR}/client)
