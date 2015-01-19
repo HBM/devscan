@@ -1,4 +1,7 @@
 # devscan
+
+[![Build Status](https://travis-ci.org/HBM/devscan.svg?branch=master)](https://travis-ci.org/HBM/devscan)
+
 The DeviceScan interface allows automatic discovery and monitoring reachability of devices connected to the network.
 
 ## Download and Build
