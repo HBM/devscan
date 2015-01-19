@@ -26,6 +26,8 @@ include_directories(../..)
 include_directories(../../jsoncpp/include)
 include_directories(include)
 
+add_subdirectory(../../jsoncpp ${PROJECT_BINARY_DIR}/jsoncpp)
+
 #add_subdirectory(test ${PROJECT_BINARY_DIR}/test)
 
 # the library with all client specific stuff
