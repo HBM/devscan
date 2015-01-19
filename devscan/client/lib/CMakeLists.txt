@@ -42,7 +42,7 @@ SET( INTERFADE_HEADERS
 ## Library used by all programs acting as client of the HBM scan protocol
 #########################################################################
 
-SET(CMAKE_CXX_FLAGS "-std=c++11" CACHE STRING "" FORCE)
+# SET(CMAKE_CXX_FLAGS "-std=c++11" CACHE STRING "" FORCE)
 
 set(SOURCES_SCANCLIENT_OWN
 
