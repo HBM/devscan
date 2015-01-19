@@ -11,7 +11,7 @@
 #include <json/value.h>
 #include <json/reader.h>
 
-#include <boost/tokenizer.hpp>
+#include "hbm/string/split.h"
 
 #include "hbm/exception/exception.hpp"
 #include "hbm/jsonrpc/jsonrpc_defines.h"
@@ -24,14 +24,7 @@ namespace hbm {
 	namespace devscan {
 		DeviceMonitor::communicationPath::communicationPath(const std::string &communicationPath)
 		{
-			static const boost::char_separator<char> keySeparator(":");
-
-			std::vector < std::string > tokens;
-			boost::tokenizer< boost::char_separator<char> > tok(communicationPath, keySeparator);
-
-			for (boost::tokenizer< boost::char_separator<char> >::const_iterator beg=tok.begin(); beg!=tok.end();++beg){
-				tokens.push_back(*beg);
-			}
+			std::vector < std::string > tokens = hbm::string::split(communicationPath, ":");
 
 			if (tokens.size() != 3) {
 				throw std::runtime_error("invalid communication path");

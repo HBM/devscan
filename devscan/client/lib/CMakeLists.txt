@@ -15,11 +15,11 @@ message(STATUS "-----------------------------------------------------------")
 message(STATUS "CppCheck            : " ${WITH_CPPCHECK})
 message(STATUS "-----------------------------------------------------------")
 
-find_package(Boost COMPONENTS)
+# find_package(Boost COMPONENTS)
 
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif(Boost_FOUND)
+# if(Boost_FOUND)
+#   include_directories(${Boost_INCLUDE_DIRS})
+# endif(Boost_FOUND)
 
 
 include_directories(../..)
@@ -66,6 +66,8 @@ set(SOURCES_SCANCLIENT
   ../../../hbm/sys/linux/eventloop.cpp
   ../../../hbm/sys/linux/timer.cpp
   ../../../hbm/sys/linux/notifier.cpp
+
+  ../../../hbm/string/split.cpp
 
   ${SOURCES_SCANCLIENT_OWN}
 )
