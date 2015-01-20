@@ -1,3 +1,7 @@
+// Copyright 2015 Hottinger Baldwin Messtechnik
+// Distributed under MIT license
+// See file LICENSE provided
+
 
 #include "split.h"
 
