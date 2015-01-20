@@ -21,5 +21,6 @@ before_install:
 script:
   - $CXX --version
   - cd devscan && cmake . && make
-  - cd devscan/client/test && cmake . && make
+  - pwd
+  - cd client/test && cmake . && make
   
