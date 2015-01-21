@@ -9,7 +9,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake)
 # link: gcov
 option(GCOV_PACKAGE "GCOV" ON)
 
-include(QuantumxBoost)
+include(QuantumxBoost OPTIONAL)
 
 find_package(Boost COMPONENTS unit_test_framework)
 if(Boost_FOUND)
