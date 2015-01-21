@@ -7,7 +7,7 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake)
 # used by: /devscan/client/lib/CMakeLists.txt
 # compile: --coverage
 # link: gcov
-option(GCOV_PACKAGE "GCOV" ON)
+# option(GCOV_PACKAGE "GCOV" ON)
 
 include(QuantumxBoost OPTIONAL)
 
