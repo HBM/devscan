@@ -21,8 +21,8 @@ before_install:
 
 script:
   - $CXX --version
-#  - cd devscan && cmake . && make
-  - pwd
-  - find / | grep libboost
+  - cd devscan && cmake . && make
+#  - pwd
+#  - find / | grep libboost
   - cd client/test && cmake . && make
   
