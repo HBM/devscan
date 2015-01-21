@@ -2,7 +2,7 @@ language: cpp
 
 compiler:
   - gcc
-  - clang
+#  - clang
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
@@ -20,7 +20,8 @@ before_install:
 
 script:
   - $CXX --version
-  - cd devscan && cmake . && make
+#  - cd devscan && cmake . && make
   - pwd
+  - find / | grep libboost
   - cd client/test && cmake . && make
   
