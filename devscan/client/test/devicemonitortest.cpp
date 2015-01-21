@@ -27,7 +27,6 @@
 #include "devscan/configureclient.h"
 
 #include "defines.h"
-#include "common/JetNames.h"
 
 #include "devicemonitortest.h"
 

@@ -12,6 +12,12 @@ option(GCOV_PACKAGE "GCOV" ON)
 include(QuantumxBoost OPTIONAL)
 
 find_package(Boost COMPONENTS unit_test_framework)
+
+if(NOT Boost_FOUND)
+    set(BOOST_LIBRARYDIR /opt/boost/1.52.0/lib)
+    find_package(Boost COMPONENTS unit_test_framework)
+endif(Boost_FOUND)
+
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
     list(APPEND ADDITIONAL_LIBS ${Boost_LIBRARIES})
