@@ -66,3 +66,7 @@ In directory `devscan/devscan/` call
 doxygen
 ```
 Find the starting page of the documentation in client/doc/doxygen/html/index.html 
+
+A generated version of the doxygen documentation is available on the `gh_pages` branch and can be accessed online:
+* http://hbm.github.io/devscan/
+* http://hbm.github.io/devscan/devscan/client/doc/doxygen/html/
