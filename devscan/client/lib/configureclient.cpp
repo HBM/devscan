@@ -124,8 +124,6 @@ namespace hbm {
 			writer.omitEndingLineFeed();
 			std::string id(createId());
 
-			tree[(const char*)NULL] = "2.0";
-
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
 			tree[hbm::jsonrpc::METHOD] = TAG_Configure;
 			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = interfaceName;
