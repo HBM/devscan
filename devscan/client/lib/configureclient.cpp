@@ -59,7 +59,7 @@ namespace hbm {
 				std::chrono::milliseconds timediff = std::chrono::duration_cast < std::chrono::milliseconds > (endTime - std::chrono::steady_clock::now());
 
 				// receive responses until timeout or error.
-				nbytes = m_MulticastServer.receiveTelegram(readBuffer, sizeof(readBuffer), adapterIndex, timediff);
+				nbytes = m_MulticastServer.receiveTelegramBlocking(readBuffer, sizeof(readBuffer), adapterIndex, timediff);
 				if (nbytes > 0) {
 					Json::Value telegramNode;
 
@@ -123,6 +123,8 @@ namespace hbm {
 			Json::FastWriter writer;
 			writer.omitEndingLineFeed();
 			std::string id(createId());
+
+			tree[(const char*)NULL] = "2.0";
 
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
 			tree[hbm::jsonrpc::METHOD] = TAG_Configure;

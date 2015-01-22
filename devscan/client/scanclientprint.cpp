@@ -47,6 +47,12 @@ int main(int argc, char* argv[])
 	receiver.setExpireCb(&expireCb);
 
 	// start receiving for indefinite time
-	receiver.start();
+	try {
+		receiver.start();
+	} catch(hbm::exception::exception e) {
+		std::cerr << "Error starting the receiver: " << e.what() << std::endl;
+		return 1;
+	}
+
 	return 0;
 }

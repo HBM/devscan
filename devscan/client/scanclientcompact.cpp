@@ -79,7 +79,13 @@ int main(int argc, char* argv[])
 	hbm::devscan::Receiver receiver;
 
 	// after collecting announcements for a defined time, we set the announcement callback. As a result, the announce callback is being called for all current announcements.
-	receiver.start(timeToWait);
+	try {
+		receiver.start(timeToWait);
+	} catch(hbm::exception::exception e) {
+		std::cerr << "Error starting the receiver: " << e.what() << std::endl;
+		return 1;
+	}
+
 	receiver.setAnnounceCb(std::bind(&announceCb, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, receivingInterfaceFilter));
 	return 0;
 }
