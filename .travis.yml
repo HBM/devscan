@@ -24,3 +24,20 @@ script:
   - cd devscan && cmake . && make
   - cd client/test && cmake . && make
   - ./devicemonitor.test
+
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "MJcCz4t+WTjNT5dFPJx0+gTEhhzLW3IsjdTGHQoTH39a/wrIdcskUgpZQE6PCkoQz0tFTVixeYzCbmX2jCb7mbviX3sClEgP0ghogsoxo/hVPmhU5Zxg6xmEwwIDvUbztMwcM/pb/vNt4TgXxI9L6EMfsvCwR38w+wng4uMQZ3c="
+
+addons:
+  coverity_scan:
+    project:
+      name: "HBM/devscan"
+      description: "Build submitted via Travis CI"
+    notification_email: stefan.waldschmidt@hbm.com
+    build_command_prepend: "cd devscan; cmake ."
+    build_command:  "make"
+    branch_pattern: coverity_scan
