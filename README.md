@@ -4,7 +4,10 @@ Implements an HBM Device Scan Client and some simple example programs using C++.
 The Device Scan interface allows automatic discovery and monitoring reachability of devices connected to the network.
 
 * Build Status: [![Build Status](https://travis-ci.org/HBM/devscan.svg?branch=master)](https://travis-ci.org/HBM/devscan)
-
+* Coverity Scan: <a href="https://scan.coverity.com/projects/3991">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/3991/badge.svg"/>
+</a>
 
 ## License
 Copyright (c) 2014 Hottinger Baldwin Messtechnik. See the LICENSE file for license rights and limitations.
