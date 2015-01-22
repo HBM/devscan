@@ -301,7 +301,7 @@ namespace hbm {
 			}
 
 			throw hbm::exception::exception("invalid interface");
-			return Netadapter();
+			// unreachable: return Netadapter();
 		}
 
 		Netadapter NetadapterList::getAdapterByInterfaceIndex(unsigned int interfaceIndex) const
