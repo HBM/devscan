@@ -2,6 +2,7 @@
 // Distributed under MIT license
 // See file LICENSE provided
 
+#include <cstddef>
 #include <iostream>
 #include <sstream>
 #include <exception>
@@ -36,7 +37,10 @@ namespace hbm {
 		}
 
 		DeviceMonitor::DeviceMonitor()
-			: m_announcements()
+			: m_announcements(),
+			  m_announceCb(NULL),
+			  m_expireCb(NULL),
+			  m_errorCb(NULL)
 		{
 		}
 
