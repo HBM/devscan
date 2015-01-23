@@ -36,6 +36,7 @@ namespace hbm {
 			/// \see setInterfaceConfiguration
 			/// \see hbm::devscan::CONFIG_METHOD_MANUAL
 			/// \see hbm::devscan::CONFIG_METHOD_DHCP
+			/// \throws std::runtime_error
 			std::string setInterfaceConfigurationMethod(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& uuid, const std::string& interfaceName, const std::string& method);
 
 			/// \warning the device is going to reboot automatically if necessary
@@ -44,6 +45,7 @@ namespace hbm {
 			/// \param uuid Device to be configured
 			/// \param ipv4DefaultGateWay ip-address of the default gateway, as a string
 			/// \return empty string if no answer was received. Otherwise JSON rpc response from device.
+			/// \throws std::runtime_error
 			std::string setDefaultGateway(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& uuid, const std::string& ipv4DefaultGateWay);
 
 			/// sends a request and waits some time (TIMETOWAITFORANSWERS) for the answer
@@ -55,6 +57,7 @@ namespace hbm {
 			/// \param address New ip-address for the interface, as a string
 			/// \param netmask New netmask for the interface, as a string
 			/// \return empty string if no answer was received. Otherwise JSON rpc response from device.
+			/// \throws std::runtime_error
 			std::string setInterfaceManualConfiguration(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& uuid, const std::string& interfaceName, const std::string& address, const std::string& netmask);
 
 			/// \warning the device is going to reboot automatically if necessary
@@ -66,6 +69,7 @@ namespace hbm {
 			/// \param manualAddress
 			/// \param manualNetmask
 			/// \return empty string if no answer was received. Otherwise JSON rpc response from device.
+			/// \throws std::runtime_error
 			/// \see setInterfaceConfigurationMethod
 			/// \see hbm::devscan::CONFIG_METHOD_MANUAL
 			/// \see hbm::devscan::CONFIG_METHOD_DHCP
@@ -77,6 +81,7 @@ namespace hbm {
 			/// \param id  a (unique) string identifying the request to send and match the corresponding response
 			/// \param message  complete JSOM-message to send, as a plain string
 			/// \return empty string if no answer was received. Otherwise JSON rpc response from device.
+			/// \throws std::runtime_error
 			std::string executeRequest(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& id, const std::string& message);
 
 		private:

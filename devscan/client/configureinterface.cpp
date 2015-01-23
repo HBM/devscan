@@ -19,8 +19,13 @@ int main(int argc, char* argv[])
 	std::string manualNetmask = argv[5];
 	hbm::devscan::ConfigureClient configureClient;
 
-	std::string result = configureClient.setInterfaceConfiguration("", 1, uuid, interfaceName, method, manualAddress, manualNetmask);
-
-	std::cout << result << std::endl;
+	try {
+		std::string result = configureClient.setInterfaceConfiguration("", 1, uuid, interfaceName, method, manualAddress, manualNetmask);
+		std::cout << result << std::endl;
+	} catch (std::runtime_error e) {
+		std::cerr << "Error: set configuration failed" << std::endl;
+		std::cerr << "EXCEPTION: " << e.what() << std::endl;
+		return 1;
+	}
 	return 0;
 }

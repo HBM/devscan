@@ -63,6 +63,7 @@ namespace hbm {
 				if (nbytes > 0) {
 					Json::Value telegramNode;
 
+					/// \throw std::runtime_error in case of a parse error
 					if(Json::Reader().parse(readBuffer, readBuffer+nbytes, telegramNode)) {
 						if(telegramNode.isMember(hbm::jsonrpc::RESULT) || telegramNode.isMember(hbm::jsonrpc::ERR)) {
 							// this is a result or an error!
@@ -104,19 +105,14 @@ namespace hbm {
 			writer.omitEndingLineFeed();
 			std::string id(createId());
 
-			try {
-				tree[hbm::jsonrpc::JSONRPC] = "2.0";
-				tree[hbm::jsonrpc::METHOD] = TAG_Configure;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = InterfaceName;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][CONFIGURATION_METHOD] = method;
-				tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
-				tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-				tree[hbm::jsonrpc::ID] = id;
-			} catch (std::runtime_error) {
-				// Coverity found a JSON_ASSERT_MESSAGE in the operator[], but
-				// could not detect that it can never throw (because
-				// Json::Value's default constructor is used).
-			}
+			/// \throw std::runtime_error if tree.type != NULL
+			tree[hbm::jsonrpc::JSONRPC] = "2.0";
+			tree[hbm::jsonrpc::METHOD] = TAG_Configure;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = InterfaceName;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][CONFIGURATION_METHOD] = method;
+			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
+			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
+			tree[hbm::jsonrpc::ID] = id;
 
 			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
 		}
@@ -129,21 +125,16 @@ namespace hbm {
 			writer.omitEndingLineFeed();
 			std::string id(createId());
 
-			try {
-				tree[hbm::jsonrpc::JSONRPC] = "2.0";
-				tree[hbm::jsonrpc::METHOD] = TAG_Configure;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = interfaceName;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][CONFIGURATION_METHOD] = method;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualAddress] = manualAddress;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = manualNetmask;
-				tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
-				tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-				tree[hbm::jsonrpc::ID] = id;
-			} catch (std::runtime_error) {
-				// Coverity found a JSON_ASSERT_MESSAGE in the operator[], but
-				// could not detect that it can never throw (because
-				// Json::Value's default constructor is used).
-			}
+			/// \throw std::runtime_error if tree.type != NULL
+			tree[hbm::jsonrpc::JSONRPC] = "2.0";
+			tree[hbm::jsonrpc::METHOD] = TAG_Configure;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = interfaceName;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][CONFIGURATION_METHOD] = method;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualAddress] = manualAddress;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = manualNetmask;
+			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
+			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
+			tree[hbm::jsonrpc::ID] = id;
 
 			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
 		}
@@ -173,18 +164,13 @@ namespace hbm {
 			writer.omitEndingLineFeed();
 			std::string id(createId());
 
-			try {
-				tree[hbm::jsonrpc::JSONRPC] = "2.0";
-				tree[hbm::jsonrpc::METHOD] = TAG_Configure;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_DefaultGateway][TAG_ipV4Address] = ipv4DefaultGateWay;
-				tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
-				tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-				tree[hbm::jsonrpc::ID] = id;
-			} catch (std::runtime_error) {
-				// Coverity found a JSON_ASSERT_MESSAGE in the operator[], but
-				// could not detect that it can never throw (because
-				// Json::Value's default constructor is used).
-			}
+			/// \throw std::runtime_error if tree.type != NULL
+			tree[hbm::jsonrpc::JSONRPC] = "2.0";
+			tree[hbm::jsonrpc::METHOD] = TAG_Configure;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_DefaultGateway][TAG_ipV4Address] = ipv4DefaultGateWay;
+			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
+			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
+			tree[hbm::jsonrpc::ID] = id;
 
 			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
 		}
@@ -219,20 +205,15 @@ namespace hbm {
 			writer.omitEndingLineFeed();
 			std::string id(createId());
 
-			try {
-				tree[hbm::jsonrpc::JSONRPC] = "2.0";
-				tree[hbm::jsonrpc::METHOD] = TAG_Configure;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = InterfaceName;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualAddress] = address;
-				tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = netmask;
-				tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
-				tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-				tree[hbm::jsonrpc::ID] = id;
-			} catch (std::runtime_error) {
-				// Coverity found a JSON_ASSERT_MESSAGE in the operator[], but
-				// could not detect that it can never throw (because
-				// Json::Value's default constructor is used).
-			}
+			/// \throw std::runtime_error if tree.type != NULL
+			tree[hbm::jsonrpc::JSONRPC] = "2.0";
+			tree[hbm::jsonrpc::METHOD] = TAG_Configure;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = InterfaceName;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualAddress] = address;
+			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = netmask;
+			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
+			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
+			tree[hbm::jsonrpc::ID] = id;
 
 			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
 		}
