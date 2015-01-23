@@ -84,7 +84,7 @@ namespace hbm {
 			static const unsigned int MAXEVENTS = 16;
 			struct epoll_event events[MAXEVENTS];
 
-			do {
+			while (true) {
 				do {
 					nfds = epoll_wait(m_epollfd, events, MAXEVENTS, -1);
 				} while ((nfds==-1) && (errno==EINTR));
@@ -106,8 +106,7 @@ namespace hbm {
 						}
 					}
 				}
-			} while (result>=0);
-			return result;
+			}
 		}
 
 		int EventLoop::execute_for(std::chrono::milliseconds timeToWait)
