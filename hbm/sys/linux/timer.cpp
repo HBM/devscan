@@ -8,6 +8,8 @@
 #include <sys/timerfd.h>
 #include <sys/poll.h>
 #include <unistd.h>
+#include <string.h> // for memset()
+
 
 #include "hbm/exception/exception.hpp"
 
@@ -66,7 +68,8 @@ namespace hbm {
 			}
 
 			uint64_t timerEventCount;
-			if (::read(m_fd, &timerEventCount, sizeof(timerEventCount))<0) {
+			ssize_t readStatus = ::read(m_fd, &timerEventCount, sizeof(timerEventCount));
+			if (readStatus<0) {
 				// timer was stopped!
 				return 0;
 			} else {
@@ -94,7 +97,8 @@ namespace hbm {
 				return -1;
 			}
 			uint64_t timerEventCount;
-			if (::read(m_fd, &timerEventCount, sizeof(timerEventCount))<0) {
+			ssize_t readStatus = ::read(m_fd, &timerEventCount, sizeof(timerEventCount));
+			if (readStatus<0) {
 				// timer was stopped!
 				return 0;
 			} else {
