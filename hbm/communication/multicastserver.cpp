@@ -41,8 +41,8 @@ namespace hbm {
 		MulticastServer::MulticastServer(const std::string& address, unsigned int port, const NetadapterList &netadapterList)
 			: m_address(address)
 			, m_port(port)
-			, m_ReceiveSocket(-1)
-			, m_SendSocket(-1)
+			, m_ReceiveSocket(NO_SOCKET)
+			, m_SendSocket(NO_SOCKET)
 			, m_receiveAddr()
 			, m_netadapterList(netadapterList)
 		{
@@ -87,6 +87,9 @@ namespace hbm {
 #else
 				m_ReceiveSocket = socket(pResult->ai_family, SOCK_DGRAM | SOCK_NONBLOCK, 0);
 #endif
+				if (m_ReceiveSocket < 0) {
+					m_ReceiveSocket = NO_SOCKET;
+				}
 
 				memset(&m_receiveAddr, 0, sizeof(m_receiveAddr));
 				m_receiveAddr.sin_family = pResult->ai_family;
@@ -164,6 +167,7 @@ namespace hbm {
 			m_SendSocket = socket(AF_INET, SOCK_DGRAM, 0);
 
 			if (m_SendSocket < 0) {
+				m_SendSocket = NO_SOCKET;
 				::syslog(LOG_ERR, "Could not create socket!");
 				return -1;
 			}
@@ -191,6 +195,11 @@ namespace hbm {
 		ssize_t MulticastServer::receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex)
 		{
 			int retval;
+
+			if (m_ReceiveSocket == NO_SOCKET) {
+				return -1;
+			}
+
 #ifdef _WIN32
 			fd_set rfds;
 			FD_ZERO(&rfds);
@@ -224,6 +233,9 @@ namespace hbm {
 		{
 			int milliSeconds = static_cast < int > (timeout.count());
 
+			if (m_ReceiveSocket == NO_SOCKET) {
+				return -1;
+			}
 
 			int retval;
 	#ifdef _WIN32
@@ -674,19 +686,26 @@ namespace hbm {
 
 		void MulticastServer::stop()
 		{
+			if (m_SendSocket != NO_SOCKET) {
 	#ifdef _WIN32
-			::closesocket(m_SendSocket);
+				::closesocket(m_SendSocket);
 	#else
-			::close(m_SendSocket);
+				::close(m_SendSocket);
 	#endif
+				m_SendSocket = NO_SOCKET;
+			}
+
+			if (m_ReceiveSocket != NO_SOCKET) {
 
 	#ifdef _WIN32
-			::shutdown(m_ReceiveSocket, SD_BOTH);
-			::closesocket(m_ReceiveSocket);
+				::shutdown(m_ReceiveSocket, SD_BOTH);
+				::closesocket(m_ReceiveSocket);
 	#else
-			::shutdown(m_ReceiveSocket, SHUT_RDWR);
-			::close(m_ReceiveSocket);
+				::shutdown(m_ReceiveSocket, SHUT_RDWR);
+				::close(m_ReceiveSocket);
 	#endif
+				m_ReceiveSocket = NO_SOCKET;
+			}
 		}
 	}
 }
