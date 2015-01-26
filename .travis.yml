@@ -2,7 +2,8 @@ language: cpp
 
 compiler:
   - gcc
-  - clang
+# One compiler (gcc) is sufficient on the coverity_scan branch
+#  - clang
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
