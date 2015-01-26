@@ -120,6 +120,8 @@ namespace hbm {
 
 			const unsigned int m_port;
 
+			static const SOCKET NO_SOCKET = static_cast<SOCKET>(-1);
+
 			SOCKET m_ReceiveSocket;
 			SOCKET m_SendSocket;
 	#ifdef _WIN32
