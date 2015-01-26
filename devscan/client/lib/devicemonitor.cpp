@@ -123,6 +123,8 @@ namespace hbm {
 					return;
 				}
 
+//				callErrorCb(0, "received", message);
+
 				announcements_t::iterator iter = m_announcements.find(key);
 				if (iter!=m_announcements.end()) {
 					// update existing entry
@@ -146,7 +148,7 @@ namespace hbm {
 					}
 				}
 			}
-			catch(std::exception &e) {
+			catch(std::exception &) {
 				callErrorCb(cb_t::DATA_DROPPED | cb_t::E_EXCEPTION1, "Receiving error 1", message);
 			}
 			catch(...) {

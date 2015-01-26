@@ -5,6 +5,7 @@
 #ifndef _RECEIVER_H
 #define _RECEIVER_H
 
+
 #include <string>
 #include <chrono>
 
@@ -35,19 +36,24 @@ namespace hbm {
 			Receiver();
 
 			/// set the callback method to be called on arrival of new or change of an already known announcement
-			void setAnnounceCb(announceCb_t cb);
+			virtual void setAnnounceCb(announceCb_t cb);
 			/// set the callback method to be called on expiration of an announcement
-			void setExpireCb(expireCb_t cb);
+			virtual void setExpireCb(expireCb_t cb);
 			/// set the callback method to be called on errors in the received network telegram
-			void setErrorCb(errorCb_t cb);
+			virtual void setErrorCb(errorCb_t cb);
 
 			/// Start event loop that collects announcements, retires expired announcements.
 			/// Under Linux network events (like new network interfaces) are handled too.
 			/// Returns after the specified time, on execution of stop() or if an error occurs.
-			/// \param timeOfExecution amount of time in ms to execute. 0 for indefinite
-			void start(std::chrono::milliseconds timeOfExecution=std::chrono::milliseconds(0));
+			/// \param timeOfExecution amount of time in ms to execute.
+			virtual void start_for(std::chrono::milliseconds timeOfExecution);
 
-			void stop();
+			/// Start event loop that collects announcements, retires expired announcements.
+			/// Under Linux network events (like new network interfaces) are handled too.
+			/// Returns on execution of stop() or if an error occurs.
+			virtual void start();
+
+			virtual void stop();
 
 		private:
 			communication::NetadapterList m_netadapterList;

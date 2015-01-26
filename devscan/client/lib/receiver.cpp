@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <functional>
 
 
@@ -22,7 +23,7 @@ namespace hbm {
 		Receiver::Receiver()
 			: m_netadapterList()
 			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList)
-			, m_timer(ANNOUNCE_PERIOD_MS)
+			, m_timer(1000)
 #ifndef _WIN32
 			, m_netlink()
 #endif
@@ -62,7 +63,7 @@ namespace hbm {
 
 		ssize_t Receiver::retireEventHandler()
 		{
-			int result = m_timer.wait();
+			int result = m_timer.read();
 			if (result>0) {
 				m_deviceMonitor.checkForExpiredAnnouncements();
 			}
@@ -89,12 +90,33 @@ namespace hbm {
 		}
 
 
-		void Receiver::start(std::chrono::milliseconds timeOfExecution)
+		void Receiver::start()
 		{
 			sys::EventLoop evl;
 
 			m_scanner.start();
+			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
+#ifndef _WIN32
+			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
+#endif
+			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
 
+			m_scanner.addAllInterfaces();
+			evl.execute();
+
+#ifndef _WIN32
+			m_netlink.stop();
+#endif
+			m_scanner.stop();
+			m_timer.cancel();
+		}
+
+
+		void Receiver::start_for(std::chrono::milliseconds timeOfExecution)
+		{
+			sys::EventLoop evl;
+
+			m_scanner.start();
 			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
 #ifndef _WIN32
 			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));

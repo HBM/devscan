@@ -36,6 +36,9 @@ namespace hbm {
 			/// @param period_ms timer interval in ms
 			int set(unsigned int period_ms);
 
+			/// \return 0 if timer has not expired yet. 1 if timer has expired. -1 if timer was not started
+			int read();
+
 			/// \return 0 if timer was stopped before expiration. 1 if timer has expired. -1 if timer was not started
 			int wait();
 

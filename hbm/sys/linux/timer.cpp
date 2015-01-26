@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include <sys/timerfd.h>
+#include <sys/poll.h>
 #include <unistd.h>
 
 #include "hbm/exception/exception.hpp"
@@ -15,7 +16,7 @@
 namespace hbm {
 	namespace sys {
 		Timer::Timer()
-			: m_fd(timerfd_create(CLOCK_MONOTONIC, 0))
+			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create timer fd");
@@ -55,7 +56,7 @@ namespace hbm {
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}
 
-		int Timer::wait()
+		int Timer::read()
 		{
 			struct itimerspec currValue;
 			timerfd_gettime(m_fd, &currValue);
@@ -65,7 +66,35 @@ namespace hbm {
 			}
 
 			uint64_t timerEventCount;
-			if (read(m_fd, &timerEventCount, sizeof(timerEventCount))<0) {
+			if (::read(m_fd, &timerEventCount, sizeof(timerEventCount))<0) {
+				// timer was stopped!
+				return 0;
+			} else {
+				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
+				return 1;
+			}
+		}
+
+		int Timer::wait()
+		{
+			struct itimerspec currValue;
+			timerfd_gettime(m_fd, &currValue);
+			if(currValue.it_value.tv_sec==0 && currValue.it_value.tv_nsec==0) {
+				// not started!
+				return -1;
+			}
+
+			struct pollfd pfd;
+
+			pfd.fd = m_fd;
+			pfd.events = POLLIN;
+
+			int retval = poll(&pfd, 1, -1);
+			if (retval!=1) {
+				return -1;
+			}
+			uint64_t timerEventCount;
+			if (::read(m_fd, &timerEventCount, sizeof(timerEventCount))<0) {
 				// timer was stopped!
 				return 0;
 			} else {

@@ -77,6 +77,8 @@
 #define _RECEIVER_IF_H
 
 #include <functional>
+#include <chrono>
+
 
 /// \namespace hbm
 /// \brief Namespace for software by Hottinger Baldwin Messtechnik.
@@ -180,7 +182,7 @@ namespace hbm {
 		///
 		/// \see ReceiverIf::setErrorCb()
 		/// \see cb_t
-		typedef std::function < void (uint64_t errorcode, const std::string& userMessage, const std::string& receivedData) > errorCb_t;
+		typedef std::function < void (uint32_t errorcode, const std::string& userMessage, const std::string& receivedData) > errorCb_t;
 
 		/// \interface ReceiverIf
 		/// \brief The interface to use by HBM Scan Clients.
@@ -208,9 +210,19 @@ namespace hbm {
 			///
 			/// The event loop collects announcements and retires expired announcements.
 			/// Under Linux network events (like new network interfaces) are handled too.
+			/// Returns on execution of stop() or if an error occurs.
+			virtual void start() = 0;
+			
+			/// \brief Starts event loop that collects announcements messages
+			///        from the network and calls callback functions.
+			///
+			/// The event loop collects announcements and retires expired announcements.
+			/// Under Linux network events (like new network interfaces) are handled too.
 			/// Returns after the specified time, on execution of stop() or if an error occurs.
-			/// \param timeOfExecution  amount of time in ms to execute. 0 for indefinite.
-			virtual void start(std::chrono::milliseconds timeOfExecution=std::chrono::milliseconds(0)) = 0;
+			/// \param timeOfExecution  amount of time in ms to execute.
+			virtual void start_for(std::chrono::milliseconds timeOfExecution) = 0;
+
+
 
 			/// \brief Stops the event loop that was started with ReceiverIf.start.
 			/// The start-call will return.

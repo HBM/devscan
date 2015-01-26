@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <chrono>
 
 #include <json/value.h>
 #include <json/reader.h>
@@ -78,9 +79,10 @@ int main(int argc, char* argv[])
 	static const std::chrono::milliseconds timeToWait(10000);
 	hbm::devscan::Receiver receiver;
 
+	std::cerr << "Collecting announcements for " << timeToWait.count() << "msec" << std::endl;
 	// after collecting announcements for a defined time, we set the announcement callback. As a result, the announce callback is being called for all current announcements.
 	try {
-		receiver.start(timeToWait);
+		receiver.start_for(timeToWait);
 	} catch(hbm::exception::exception e) {
 		std::cerr << "Error starting the receiver: " << e.what() << std::endl;
 		return 1;

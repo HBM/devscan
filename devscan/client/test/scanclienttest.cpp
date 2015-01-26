@@ -43,7 +43,7 @@ namespace hbm {
 
             std::chrono::milliseconds timeToWait(10000);
 
-            m_scanClient.start(timeToWait);
+            m_scanClient.start_for(timeToWait);
 
             BOOST_ASSERT_MSG(m_announcement.isNull()==false, "no device found!");
         }
@@ -89,7 +89,7 @@ namespace hbm {
 
             static const std::chrono::milliseconds timeToWait(10000);
 
-            m_scanClient.start(timeToWait);
+            m_scanClient.start_for(timeToWait);
 
 
             std::stringstream msg;

@@ -23,10 +23,7 @@ namespace hbm
 		const char ANNOUNCE_IPV4_ADDRESS[] = "239.255.77.76";
 		/// configuration requests and responses go to this group
 		const char CONFIG_IPV4_ADDRESS[] = "239.255.77.77";
-
-
-		static const unsigned int ANNOUNCE_PERIOD_MS = 5000;
-
+		
 
 		static const char TAG_Announce[] = "announce";
 		static const char TAG_Configure[] = "configure";

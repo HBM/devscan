@@ -43,18 +43,16 @@ namespace hbm {
 			, m_port(port)
 			, m_ReceiveSocket(-1)
 			, m_SendSocket(-1)
-	#ifdef _WIN32
-			, m_event(WSACreateEvent())
-	#endif
 			, m_receiveAddr()
 			, m_netadapterList(netadapterList)
 		{
 
-	#ifdef _WIN32
+#ifdef _WIN32
 			WORD RequestedSockVersion = MAKEWORD(2, 0);
 			WSADATA wsaData;
 			WSAStartup(RequestedSockVersion, &wsaData);
-	#endif
+			m_event = WSACreateEvent();
+#endif
 
 		}
 
@@ -109,8 +107,11 @@ namespace hbm {
 
 	#ifdef _WIN32
 			// WSAEventSelect automatically sets the socket to non blocking!
-			WSAEventSelect(m_ReceiveSocket, m_event, FD_READ);
-			// switch to blocking
+			if (WSAEventSelect(m_ReceiveSocket, m_event, FD_READ)<0) {
+				::syslog(LOG_ERR, "WSAEventSelect failed!");
+				return -1;
+			}
+			//// switch to blocking
 			//u_long value = 0;
 			//::ioctlsocket(m_ReceiveSocket, FIONBIO, &value);
 	#endif
