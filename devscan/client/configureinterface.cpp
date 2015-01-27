@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	try {
 		std::string result = configureClient.setInterfaceConfiguration("", 1, uuid, interfaceName, method, manualAddress, manualNetmask);
 		std::cout << result << std::endl;
-	} catch (std::runtime_error e) {
+	} catch (std::runtime_error& e) {
 		std::cerr << "Error: set configuration failed" << std::endl;
 		std::cerr << "EXCEPTION: " << e.what() << std::endl;
 		return 1;

@@ -65,7 +65,7 @@ namespace hbm {
 				static std::string   lastReceivingInterfaceName;
 				static std::string   lastAnnouncement;
 
-				/// called on new or changed announcment
+				/// called on new or changed announcement
 				static void announceCbTest(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
 				{
 					BOOST_TEST_MESSAGE("announceCb called");
@@ -76,17 +76,29 @@ namespace hbm {
 	//				std::cerr << "LOG: announceCb called" << std::endl ;
 				}
 
+				/// \throws (int)0
+				static void announceCbThrows(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
+				{
+					throw 0;
+				}
 
 				static unsigned int  countExpiration;
 				static std::string   lastExpiredUuid;
 
 				/// called on exipry of an announcement
-				static void expireCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
+				static void expireCbTest(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
 				{
 					countExpiration++;
 					lastExpiredUuid = uuid;
 					std::cerr << "expired: " << uuid << " " << receivingInterfaceName << " " << sendingIpAddress << std::endl;
 				}
+
+				/// \throws (const char*)0
+				static void expireCbThrows(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
+				{
+					throw (const char*)0;
+				}
+
 
 				static unsigned int  countErrors;
 				static uint32_t      lastErrorCode;
@@ -97,6 +109,12 @@ namespace hbm {
 					countErrors++;
 					lastErrorCode = errorCode;
 					std::cerr << "Error " << errorCode << ": " << userMessage << " \"" << announcement << "\"" << std::endl;
+				}
+
+				/// \throws
+				static void errorCbThrows(uint32_t errorCode, const std::string& userMessage, const std::string& announcement)
+				{
+					throw new std::exception;
 				}
 
 
@@ -481,7 +499,7 @@ namespace hbm {
 				BOOST_CHECK_EQUAL(countAnnouncement, 0);
 				BOOST_CHECK_EQUAL(lastAnnouncement, "");
 
-				m_deviceMonitor.setExpireCb(expireCb);
+				m_deviceMonitor.setExpireCb(expireCbTest);
 				BOOST_CHECK_EQUAL(countExpiration, 0);
 
 				std::string message;
@@ -490,7 +508,7 @@ namespace hbm {
 				const char* const uuid3 = "to_expire_in_3_sec";
 				const char* const uuid5 = "to_expire_in_5_sec";
 
-				// insert announcemnets "out of any order"
+				// insert announcements "out of any order"
 
 				// select an expiration time of 3 seconds
 				message = getJsonAnnouncementString(3, uuid3, "1.1.1.3");
@@ -517,21 +535,45 @@ namespace hbm {
 
 				sleep(2); // wait for 2 seconds
 				m_deviceMonitor.checkForExpiredAnnouncements();
-				// expiration should have occured
+				// expiration should have occurred
 				BOOST_CHECK_EQUAL(countExpiration, 1);
 				BOOST_CHECK_EQUAL(lastExpiredUuid, uuid1);
 
 				sleep(2); // wait for 2 seconds
 				m_deviceMonitor.checkForExpiredAnnouncements();
-				// expiration should have occured
+				// expiration should have occurred
 				BOOST_CHECK_EQUAL(countExpiration, 2);
 				BOOST_CHECK_EQUAL(lastExpiredUuid, uuid3);
 
 				sleep(2); // wait for 2 seconds
 				m_deviceMonitor.checkForExpiredAnnouncements();
-				// expiration should have occured
+				// expiration should have occurred
 				BOOST_CHECK_EQUAL(countExpiration, 3);
 				BOOST_CHECK_EQUAL(lastExpiredUuid, uuid5);
+			}
+
+
+			/// Test: exceptions in user-provided callback-functions
+			BOOST_AUTO_TEST_CASE( test_callback_throws )
+			{
+				m_deviceMonitor.setAnnounceCb(announceCbThrows);
+				m_deviceMonitor.setExpireCb(expireCbThrows);
+				m_deviceMonitor.setErrorCb(errorCbThrows);
+
+				// select an expiration time of 1 seconds
+				std::string message = getJsonAnnouncementString(1, "to_expire_in_1_sec", "1.1.2.1");
+
+				// trigger announce call-back
+				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
+				// re-trigger announce call-back
+				m_deviceMonitor.setAnnounceCb(announceCbThrows);
+
+				sleep(2); // wait for 2 seconds
+				// trigger expire call-back
+				m_deviceMonitor.checkForExpiredAnnouncements();
+				// trigger error call-back
+				m_deviceMonitor.processReceivedAnnouncement("eth_some_long_name", "This is not a valid message");
+
 			}
 
 			BOOST_AUTO_TEST_SUITE_END()

@@ -96,7 +96,7 @@ namespace hbm {
 					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_METHOD, "Missing \"announcement\" in JSON-document", message);
 					return;
 				}
-				// this is an annoucement!
+				// this is an announcement!
 				const Json::Value& ipV4Node = announcement[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4];
 				if (ipV4Node.empty()) {
 					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_IPADDR, "Missing ip-address in JSON-document", message);

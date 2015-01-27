@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	// start receiving for indefinite time
 	try {
 		receiver.start();
-	} catch(hbm::exception::exception e) {
+	} catch(hbm::exception::exception& e) {
 		std::cerr << "Error starting the receiver: " << e.what() << std::endl;
 		return 1;
 	}

@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
 	// after collecting announcements for a defined time, we set the announcement callback. As a result, the announce callback is being called for all current announcements.
 	try {
 		receiver.start_for(timeToWait);
-	} catch(hbm::exception::exception e) {
+	} catch(hbm::exception::exception& e) {
 		std::cerr << "Error starting the receiver: " << e.what() << std::endl;
 		return 1;
 	}

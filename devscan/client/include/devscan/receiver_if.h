@@ -212,7 +212,7 @@ namespace hbm {
 			/// Under Linux network events (like new network interfaces) are handled too.
 			/// Returns on execution of stop() or if an error occurs.
 			virtual void start() = 0;
-			
+
 			/// \brief Starts event loop that collects announcements messages
 			///        from the network and calls callback functions.
 			///
@@ -228,6 +228,9 @@ namespace hbm {
 			/// The start-call will return.
 			/// \see start
 			virtual void stop() = 0;
+
+		protected:
+			virtual ~ReceiverIf() {};
 		};
 	}
 }
