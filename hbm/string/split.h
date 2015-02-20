@@ -2,8 +2,8 @@
 // Distributed under MIT license
 // See file LICENSE provided
 
-#ifndef SPLIT_H
-#define SPLIT_H
+#ifndef __HBM__STRING__SPLIT_H
+#define __HBM__STRING__SPLIT_H
 
 #include <string>
 #include <vector>
@@ -29,4 +29,4 @@ namespace hbm {
 	}
 }
 
-#endif // SPLIT_H
+#endif // __HBM__STRING__SPLIT_H

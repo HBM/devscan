@@ -174,7 +174,7 @@ namespace hbm {
 
 
 			// on simulation we want to be able to have scan daemon and ckient on the same machine. Hence we need to receive the stuff send by ourselves.
-	#ifdef _HBM_HARDWARE
+//	#ifdef _HBM_HARDWARE
 			{
 				// we do not want to receive the stuff we where sending
 				unsigned char value = 0;
@@ -187,7 +187,7 @@ namespace hbm {
 					return -1;
 				}
 			}
-	#endif
+//	#endif
 
 			return 0;
 		}
@@ -371,7 +371,6 @@ namespace hbm {
 						// ignore already added
 						return 0;
 					}
-					//::syslog(LOG_ERR, "Error adding interface address %s to multicast group. Error: %d '%s'!", interfaceAddress.c_str(), errno, strerror((errno)));
 				}
 			} else {
 				if(retVal!=0) {
@@ -379,7 +378,6 @@ namespace hbm {
 						// ignore already dropped
 						return 0;
 					}
-					//::syslog(LOG_ERR, "Error removing interface address %s from multicast group. Error: %d '%s'!", interfaceAddress.c_str(), errno, strerror((errno)));
 				}
 			}
 

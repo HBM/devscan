@@ -37,6 +37,9 @@ namespace hbm {
 
 		std::string Netadapter::getIpv4DefaultGateway()
 		{
+#ifdef _WIN32
+			return "";
+#else
 			std::string gatewayString("0.0.0.0");
 
 			FILE* fp = ::fopen("/proc/net/route", "r");
@@ -75,9 +78,8 @@ namespace hbm {
 				}
 				::fclose(fp);
 			}
-
-
 			return gatewayString;
+#endif
 		}
 
 		bool Netadapter::isApipaAddress(const std::string& address)
@@ -90,26 +92,44 @@ namespace hbm {
 			}
 		}
 
-		bool Netadapter::isValidIpV4Address(const std::string& ip)
+		bool Netadapter::isValidManualIpV4Address(const std::string& ip)
 		{
-			bool retVal = true;
-
 	#ifdef _WIN32
 			unsigned long address = inet_addr(ip.c_str());
 
 			if (address == INADDR_NONE) {
+				return false;
+			}
+			uint32_t bigAddress = htonl(address);
 	#else
 			in_addr address;
 			if (inet_aton(ip.c_str(), &address) == 0) {
-	#endif
-				retVal = false;
+				return false;
+			}
+			uint32_t bigAddress = htonl(address.s_addr);
+#endif
+
+			// check for some reserved ranges
+			uint8_t upperMost = bigAddress >> 24;
+			if (upperMost==127) {
+				// Loopback and diagnostics
+				return false;
+			} else if (upperMost>=224) {
+				// 224 - 239: Reserved for Multicasting
+				// 240 - 254: Experimental; used for research
+				return false;
 			}
 
-			if( ip.find("0.0.0.0")!=std::string::npos) {
-				retVal = false;
+			if (bigAddress==0) {
+				// 0.0.0.0
+				return false;
 			}
 
-			return retVal;
+			if(isApipaAddress(ip)) {
+				return false;
+			}
+
+			return true;
 		}
 	}
 }

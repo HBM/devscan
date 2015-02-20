@@ -317,20 +317,24 @@ bool hbm::communication::SocketNonblocking::checkSockAddr(const struct ::sockadd
 	struct sockaddr sockAddr;
 	socklen_t addrLen = sizeof(sockaddr_in);
 
-	char checkHost[256];
-	char ckeckService[8];
+	char checkHost[256] = "";
+	char ckeckService[8] = "";
 
-	char host[256];
-	char service[8];
+	char host[256] = "";
+	char service[8] = "";
 	int err = getnameinfo(pCheckSockAddr, checkSockAddrLen, checkHost, sizeof(checkHost), ckeckService, sizeof(ckeckService), NI_NUMERICHOST | NI_NUMERICSERV);
 	if (err != 0) {
 		syslog(LOG_ERR, "%s: error from getnameinfo", __FUNCTION__);
 		return false;
 	}
 
-	getpeername(m_fd, &sockAddr, &addrLen);
+	if (getpeername(m_fd, &sockAddr, &addrLen)!=0) {
+		return false;
+	}
 
-	getnameinfo(&sockAddr, addrLen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV);
+	if (getnameinfo(&sockAddr, addrLen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV)!=0) {
+		return false;
+	}
 
 	if(
 		 (strcmp(host, checkHost)==0) &&

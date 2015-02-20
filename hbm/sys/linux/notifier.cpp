@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include <sys/eventfd.h>
+#include <sys/poll.h>
 #include <unistd.h>
 
 #include "hbm/exception/exception.hpp"
@@ -14,11 +15,17 @@
 namespace hbm {
 	namespace sys {
 		Notifier::Notifier()
-			: m_fd(eventfd(0, EFD_SEMAPHORE))
+			: m_fd(eventfd(0, EFD_NONBLOCK))
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create event fd");
 			}
+		}
+
+		Notifier::Notifier(Notifier&& source)
+			: m_fd(source.m_fd)
+		{
+			source.m_fd = -1;
 		}
 
 		Notifier::~Notifier()
@@ -32,15 +39,36 @@ namespace hbm {
 			return write(m_fd, &value, sizeof(value));
 		}
 
-		int Notifier::wait()
+		int Notifier::read()
 		{
 			uint64_t value;
-			return read(m_fd, &value, sizeof(value));
+			ssize_t readStatus = ::read(m_fd, &value, sizeof(value));
+			if (readStatus<0) {
+				return 0;
+			} else {
+				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
+				return 1;
+			}
+
 		}
 
-		int Notifier::cancel()
+		int Notifier::wait()
 		{
-			return ::close(m_fd);
+			return wait_for(-1);
+		}
+
+		int Notifier::wait_for(int period_ms)
+		{
+			struct pollfd pfd;
+
+			pfd.fd = m_fd;
+			pfd.events = POLLIN;
+
+			int retval = poll(&pfd, 1, period_ms);
+			if (retval!=1) {
+				return -1;
+			}
+			return read();
 		}
 
 		event Notifier::getFd() const

@@ -20,7 +20,7 @@
 
 namespace hbm {
 	Netlink::Netlink()
-		: m_fd(socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE))
+		: m_fd(socket(AF_NETLINK, SOCK_RAW | SOCK_NONBLOCK, NETLINK_ROUTE))
 	{
 		if (m_fd<0) {
 			throw hbm::exception::exception("could not open netlink socket");

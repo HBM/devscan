@@ -6,27 +6,26 @@
 #define _EventLoop_H
 
 
+#include <list>
+#include <unordered_map>
 #ifdef _WIN32
-	#include <vector>
 	#include <WinSock2.h>
 	#include <Windows.h>
 	typedef HANDLE event;
 #else
-	#include <unordered_map>
 	typedef int event;
 #endif
 #include <functional>
-
 #include <chrono>
+#include <mutex>
+#include <condition_variable>
+#include <mutex>
+
 #include "hbm/exception/exception.hpp"
 #include "hbm/sys/notifier.h"
 
 namespace hbm {
 	namespace sys {
-		typedef std::function < int () > eventHandler_t;
-
-
-		/// \warning not thread-safe
 		class EventLoop {
 		public:
 			/// \throws hbm::exception
@@ -36,11 +35,9 @@ namespace hbm {
 
 			void eraseEvent(event fd);
 
-			void clear();
-
-			/// \return -1 eventloop stopped because one callback function returned error (-1).
+			/// \return 0 stopped; -1 error
 			int execute();
-			/// \return 0 if given time to wait was reached. -1 eventloop stopped because one callback function returned error (-1).
+			/// \return 0 stopped or if given time to wait was reached; -1 error
 			int execute_for(std::chrono::milliseconds timeToWait);
 
 			void stop();
@@ -51,16 +48,28 @@ namespace hbm {
 			};
 
 			/// fd is the key
-	#ifdef _WIN32
-			typedef std::vector < eventInfo_t > eventInfos_t;
-	#else
 			typedef std::unordered_map <event, eventInfo_t > eventInfos_t;
-			int m_epollfd;
-	#endif
+			typedef std::list < eventInfo_t > changelist_t;
 
+			/// called from within the event loop for thread-safe add and remove of events
+			int changeHandler();
+#ifdef _WIN32
+			std::vector < HANDLE > m_handles;
+#else
+			int m_epollfd;
+#endif
+
+			Notifier m_changeNotifier;
 			Notifier m_stopNotifier;
+
+			eventInfo_t m_changeEvent;
+
+			/// events to be added/removed go in here
+			changelist_t m_changeList;
+			std::mutex m_changeListMtx;
+
+			/// events handeled by event loop
 			eventInfos_t m_eventInfos;
-			eventInfo_t m_stopEvent;
 		};
 	}
 }

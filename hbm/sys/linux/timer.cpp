@@ -4,6 +4,7 @@
 
 
 #include <cstring>
+#include <iostream>
 
 #include <sys/timerfd.h>
 #include <sys/poll.h>
@@ -25,14 +26,26 @@ namespace hbm {
 			}
 		}
 
-		Timer::Timer(unsigned int period_ms)
-			: m_fd(timerfd_create(CLOCK_MONOTONIC, 0))
+		Timer::Timer(Timer&& source)
+			: m_fd(source.m_fd)
+#ifdef _WIN32
+			, m_isRunning(source.m_isRunning)
+#endif
+		{
+			source.m_fd = -1;
+#ifdef _WIN32
+			source.m_isRunning;
+#endif
+		}
+
+		Timer::Timer(unsigned int period_ms, bool repeated)
+			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create timer fd");
 			}
 
-			set(period_ms);
+			set(period_ms, repeated);
 		}
 
 		Timer::~Timer()
@@ -40,7 +53,7 @@ namespace hbm {
 			close(m_fd);
 		}
 
-		int Timer::set(unsigned int period_ms)
+		int Timer::set(unsigned int period_ms, bool repeated)
 		{
 			if (period_ms==0) {
 				return -1;
@@ -52,25 +65,19 @@ namespace hbm {
 
 			timespec.it_value.tv_sec = period_s;
 			timespec.it_value.tv_nsec = rest * 1000 * 1000;
-			timespec.it_interval.tv_sec = period_s;
-			timespec.it_interval.tv_nsec = rest * 1000 * 1000;
+			if (repeated) {
+				timespec.it_interval.tv_sec = period_s;
+				timespec.it_interval.tv_nsec = rest * 1000 * 1000;
+			}
 
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}
 
 		int Timer::read()
 		{
-			struct itimerspec currValue;
-			timerfd_gettime(m_fd, &currValue);
-			if(currValue.it_value.tv_sec==0 && currValue.it_value.tv_nsec==0) {
-				// not started!
-				return -1;
-			}
-
 			uint64_t timerEventCount;
 			ssize_t readStatus = ::read(m_fd, &timerEventCount, sizeof(timerEventCount));
 			if (readStatus<0) {
-				// timer was stopped!
 				return 0;
 			} else {
 				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
@@ -78,38 +85,40 @@ namespace hbm {
 			}
 		}
 
-		int Timer::wait()
+		int Timer::wait_for(int period_ms)
 		{
-			struct itimerspec currValue;
-			timerfd_gettime(m_fd, &currValue);
-			if(currValue.it_value.tv_sec==0 && currValue.it_value.tv_nsec==0) {
-				// not started!
-				return -1;
-			}
-
 			struct pollfd pfd;
 
 			pfd.fd = m_fd;
 			pfd.events = POLLIN;
 
-			int retval = poll(&pfd, 1, -1);
+			int retval = poll(&pfd, 1, period_ms);
 			if (retval!=1) {
 				return -1;
 			}
-			uint64_t timerEventCount;
-			ssize_t readStatus = ::read(m_fd, &timerEventCount, sizeof(timerEventCount));
-			if (readStatus<0) {
-				// timer was stopped!
-				return 0;
-			} else {
-				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
-				return 1;
-			}
+			return read();
+		}
+
+		int Timer::wait()
+		{
+			return wait_for(-1);
 		}
 
 		int Timer::cancel()
 		{
-			return ::close(m_fd);
+			int retval = 0;
+			struct itimerspec timespec;
+
+			timerfd_gettime(m_fd, &timespec);
+			if ( (timespec.it_value.tv_sec != 0) || (timespec.it_value.tv_nsec != 0) ) {
+				// timer is running
+				retval = 1;
+			}
+
+			memset (&timespec, 0, sizeof(timespec));
+			timerfd_settime(m_fd, 0, &timespec, nullptr);
+
+			return retval;
 		}
 
 		event Timer::getFd() const

@@ -28,23 +28,30 @@ namespace hbm {
 			/// \throws hbm::exception
 			Timer();
 
+			Timer(Timer&& source);
+
 			/// @param period_ms timer interval in ms
 			/// \throws hbm::exception
-			Timer(unsigned int period_ms);
+			Timer(unsigned int period_ms, bool repeated);
 			~Timer();
 
 			/// @param period_ms timer interval in ms
-			int set(unsigned int period_ms);
+			int set(unsigned int period_ms, bool repeated);
 
-			/// \return 0 if timer has not expired yet. 1 if timer has expired. -1 if timer was not started
+			/// \return 0 if timer has not expired yet. 1 if timer has expired
 			int read();
 
-			/// \return 0 if timer was stopped before expiration. 1 if timer has expired. -1 if timer was not started
+			/// \return 0 if timer was stopped before expiration. 1 if timer has expired
 			int wait();
+
+			/// \return 0 if timer was stopped before expiration. 1 if timer has expired. -1 on time out
+			int wait_for(int period_ms);
 
 			/// to poll
 			event getFd() const;
 
+			/// timer will not signal, wait will block.
+			/// \return 1 success, timer was running; 0 success
 			int cancel();
 
 		private:
@@ -55,10 +62,8 @@ namespace hbm {
 
 			event m_fd;
 #ifdef _WIN32
-			/// workaround for windows to determine whether the timer is stopped or got signaled
-			bool m_canceled;
+			bool m_isRunning;
 #endif
-
 		};
 	}
 }

@@ -26,57 +26,83 @@ namespace hbm {
 				throw hbm::exception::exception(std::string("epoll_create failed)") + strerror(errno));
 			}
 
-			m_stopEvent.fd = m_stopNotifier.getFd();
-
 			struct epoll_event ev;
-			ev.events = EPOLLIN;
+			ev.events = EPOLLIN | EPOLLET;
+			eventInfo_t stopEvent;
+			stopEvent.fd = m_stopNotifier.getFd();
+			stopEvent.eventHandler = eventHandler_t();
 			ev.data.ptr = nullptr;
-			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_stopEvent.fd, &ev) == -1) {
+			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, stopEvent.fd, &ev) == -1) {
+				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+			}
+
+			m_changeEvent.fd = m_changeNotifier.getFd();
+			m_changeEvent.eventHandler = std::bind(&EventLoop::changeHandler, this);
+			ev.data.ptr = &m_changeEvent;
+			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_changeEvent.fd, &ev) == -1) {
 				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
 			}
 		}
 
 		EventLoop::~EventLoop()
 		{
+			stop();
 			close(m_epollfd);
 		}
 
+		int EventLoop::changeHandler()
+		{
+			std::lock_guard < std::mutex > lock(m_changeListMtx);
+			m_changeNotifier.read();
+			for(changelist_t::const_iterator iter = m_changeList.begin(); iter!=m_changeList.end(); ++iter) {
+				const eventInfo_t& item = *iter;
+				if(item.eventHandler) {
+					// add
+					m_eventInfos[item.fd] = item;
+
+					struct epoll_event ev;
+					ev.events = EPOLLIN | EPOLLET;
+					// important: elements of maps are guaranteed to keep there position in memory if members are added/removed!
+					ev.data.ptr = &m_eventInfos[item.fd];
+					if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, item.fd, &ev) == -1) {
+						syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+					}
+				} else {
+					// remove
+					epoll_ctl(m_epollfd, EPOLL_CTL_DEL, item.fd, NULL);
+					m_eventInfos.erase(item.fd);
+				}
+			}
+			m_changeList.clear();
+			return 0;
+		}
+
+
 		void EventLoop::addEvent(event fd, eventHandler_t eventHandler)
 		{
-			eraseEvent(fd);
-
+			if(!eventHandler) {
+				return;
+			}
 			eventInfo_t evi;
 			evi.fd = fd;
 			evi.eventHandler = eventHandler;
-
-			eventInfo_t& eviRef = m_eventInfos[fd] = evi;
-
-
-			struct epoll_event ev;
-			ev.events = EPOLLIN;
-			ev.data.ptr = &eviRef;
-			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, eviRef.fd, &ev) == -1) {
-				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+			{
+				std::lock_guard < std::mutex > lock(m_changeListMtx);
+				m_changeList.push_back(evi);
+				m_changeNotifier.notify();
 			}
 		}
 
 		void EventLoop::eraseEvent(event fd)
 		{
-			eventInfos_t::iterator iter = m_eventInfos.find(fd);
-			if(iter!=m_eventInfos.end()) {
-				const eventInfo_t& eviRef = iter->second;
-				epoll_ctl(m_epollfd, EPOLL_CTL_DEL, eviRef.fd, NULL);
-				m_eventInfos.erase(iter);
+			eventInfo_t evi;
+			evi.fd = fd;
+			evi.eventHandler = eventHandler_t(); // empty handler signals removal
+			{
+				std::lock_guard < std::mutex > lock(m_changeListMtx);
+				m_changeList.push_back(evi);
+				m_changeNotifier.notify();
 			}
-		}
-
-		void EventLoop::clear()
-		{
-			for (eventInfos_t::iterator iter = m_eventInfos.begin(); iter!=m_eventInfos.end(); ++iter) {
-				const eventInfo_t& eviRef = iter->second;
-				epoll_ctl(m_epollfd, EPOLL_CTL_DEL, eviRef.fd, NULL);
-			}
-			m_eventInfos.clear();
 		}
 
 		int EventLoop::execute()
@@ -90,7 +116,7 @@ namespace hbm {
 					nfds = epoll_wait(m_epollfd, events, MAXEVENTS, -1);
 				} while ((nfds==-1) && (errno==EINTR));
 
-				if((nfds==0) || (nfds==-1)) {
+				if(nfds<=0) {
 					// 0: time out!
 					return nfds;
 				}
@@ -99,11 +125,18 @@ namespace hbm {
 					if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
 						if(pEventInfo==nullptr) {
+							// stop notification!
 							return 0;
 						}
-						ssize_t result = pEventInfo->eventHandler();
+						ssize_t result;
+						do {
+							result = pEventInfo->eventHandler();
+						} while (result>0);
 						if(result<0) {
-							return result;
+							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
+								// this event is removed from the event loop.
+								eraseEvent(pEventInfo->fd);
+							}
 						}
 					}
 				}
@@ -143,9 +176,19 @@ namespace hbm {
 				for (int n = 0; n < nfds; ++n) {
 					if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
-						ssize_t result = pEventInfo->eventHandler();
+						if(pEventInfo==nullptr) {
+							// stop notification!
+							return 0;
+						}
+						ssize_t result;
+						do {
+							result = pEventInfo->eventHandler();
+						} while (result>0);
 						if(result<0) {
-							return result;
+							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
+								// this event is removed from the event loop.
+								eraseEvent(pEventInfo->fd);
+							}
 						}
 					}
 				}

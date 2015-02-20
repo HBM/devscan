@@ -107,7 +107,7 @@ namespace hbm {
 			static std::string getIpv4DefaultGateway();
 
 			static bool isApipaAddress(const std::string& address);
-			static bool isValidIpV4Address(const std::string& ip);
+			static bool isValidManualIpV4Address(const std::string& ip);
 
 			std::string m_name;
 
