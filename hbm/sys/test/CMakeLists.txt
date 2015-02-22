@@ -45,34 +45,34 @@ target_link_libraries (
 #--log_sink=${CMAKE_BINARY_DIR}/executecommand_test.xml)
 
 
-SET(TIMER_TEST
-	../timer.h
-	../notifier.h
-	../defines.h
-	../linux/timer.cpp
-	timer_test.cpp
-)
-set_source_files_properties(
-	${TIMER_TEST}
-	PROPERTIES COMPILE_FLAGS "-Wextra"
-)
+#SET(TIMER_TEST
+#	../timer.h
+#	../notifier.h
+#	../defines.h
+#	../linux/timer.cpp
+#	timer_test.cpp
+#)
+#set_source_files_properties(
+#	${TIMER_TEST}
+#	PROPERTIES COMPILE_FLAGS "-Wextra"
+#)
 
-add_executable(
-	timer.test
-	${TIMER_TEST}
-)
+#add_executable(
+#	timer.test
+#	${TIMER_TEST}
+#)
 
-target_link_libraries (
-	timer.test
-	${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-)
+#target_link_libraries (
+#	timer.test
+#	${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+#)
 
 
-add_test(timer_test timer.test
---report_level=no
---log_level=all
---output_format=xml
---log_sink=${CMAKE_BINARY_DIR}/timer_test.xml)
+#add_test(timer_test timer.test
+#--report_level=no
+#--log_level=all
+#--output_format=xml
+#--log_sink=${CMAKE_BINARY_DIR}/timer_test.xml)
 
 
 

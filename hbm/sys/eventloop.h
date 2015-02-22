@@ -22,7 +22,8 @@
 #include <mutex>
 
 #include "hbm/exception/exception.hpp"
-#include "hbm/sys/notifier.h"
+#include "hbm/sys/defines.h"
+//#include "hbm/sys/notifier.h"
 
 namespace hbm {
 	namespace sys {
@@ -31,7 +32,7 @@ namespace hbm {
 			/// \throws hbm::exception
 			EventLoop();
 			virtual ~EventLoop();
-			void addEvent(event fd, eventHandler_t eventHandler);
+			void addEvent(event fd, EventHandler_t eventHandler);
 
 			void eraseEvent(event fd);
 
@@ -44,7 +45,7 @@ namespace hbm {
 		private:
 			struct eventInfo_t {
 				event fd;
-				eventHandler_t eventHandler;
+				EventHandler_t eventHandler;
 			};
 
 			/// fd is the key
@@ -57,10 +58,11 @@ namespace hbm {
 			std::vector < HANDLE > m_handles;
 #else
 			int m_epollfd;
+			int m_changeFd;
+			int m_stopFd;
 #endif
-
-			Notifier m_changeNotifier;
-			Notifier m_stopNotifier;
+			//Notifier m_changeNotifier;
+			//Notifier m_stopNotifier;
 
 			eventInfo_t m_changeEvent;
 

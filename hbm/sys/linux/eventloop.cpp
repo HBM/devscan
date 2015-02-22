@@ -10,17 +10,19 @@
 
 #include <syslog.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 
 #include <errno.h>
 
 
 #include "hbm/sys/eventloop.h"
-#include "hbm/sys/notifier.h"
 
 namespace hbm {
 	namespace sys {
 		EventLoop::EventLoop()
 			: m_epollfd(epoll_create(1)) // parameter is ignored but must be greater than 0
+			, m_changeFd(eventfd(0, EFD_NONBLOCK))
+			, m_stopFd(eventfd(0, EFD_NONBLOCK))
 		{
 			if(m_epollfd==-1) {
 				throw hbm::exception::exception(std::string("epoll_create failed)") + strerror(errno));
@@ -28,18 +30,15 @@ namespace hbm {
 
 			struct epoll_event ev;
 			ev.events = EPOLLIN | EPOLLET;
-			eventInfo_t stopEvent;
-			stopEvent.fd = m_stopNotifier.getFd();
-			stopEvent.eventHandler = eventHandler_t();
 			ev.data.ptr = nullptr;
-			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, stopEvent.fd, &ev) == -1) {
+			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_stopFd, &ev) == -1) {
 				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
 			}
 
-			m_changeEvent.fd = m_changeNotifier.getFd();
+			m_changeEvent.fd = m_changeFd;
 			m_changeEvent.eventHandler = std::bind(&EventLoop::changeHandler, this);
 			ev.data.ptr = &m_changeEvent;
-			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_changeEvent.fd, &ev) == -1) {
+			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_changeFd, &ev) == -1) {
 				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
 			}
 		}
@@ -53,32 +52,35 @@ namespace hbm {
 		int EventLoop::changeHandler()
 		{
 			std::lock_guard < std::mutex > lock(m_changeListMtx);
-			m_changeNotifier.read();
-			for(changelist_t::const_iterator iter = m_changeList.begin(); iter!=m_changeList.end(); ++iter) {
-				const eventInfo_t& item = *iter;
-				if(item.eventHandler) {
-					// add
-					m_eventInfos[item.fd] = item;
+			uint64_t value;
+			int result = ::read(m_changeFd, &value, sizeof(value));
+			if (result>0) {
+				for(changelist_t::const_iterator iter = m_changeList.begin(); iter!=m_changeList.end(); ++iter) {
+					const eventInfo_t& item = *iter;
+					if(item.eventHandler) {
+						// add
+						m_eventInfos[item.fd] = item;
 
-					struct epoll_event ev;
-					ev.events = EPOLLIN | EPOLLET;
-					// important: elements of maps are guaranteed to keep there position in memory if members are added/removed!
-					ev.data.ptr = &m_eventInfos[item.fd];
-					if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, item.fd, &ev) == -1) {
-						syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+						struct epoll_event ev;
+						ev.events = EPOLLIN | EPOLLET;
+						// important: elements of maps are guaranteed to keep there position in memory if members are added/removed!
+						ev.data.ptr = &m_eventInfos[item.fd];
+						if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, item.fd, &ev) == -1) {
+							syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+						}
+					} else {
+						// remove
+						epoll_ctl(m_epollfd, EPOLL_CTL_DEL, item.fd, NULL);
+						m_eventInfos.erase(item.fd);
 					}
-				} else {
-					// remove
-					epoll_ctl(m_epollfd, EPOLL_CTL_DEL, item.fd, NULL);
-					m_eventInfos.erase(item.fd);
 				}
+				m_changeList.clear();
 			}
-			m_changeList.clear();
-			return 0;
+			return result;
 		}
 
 
-		void EventLoop::addEvent(event fd, eventHandler_t eventHandler)
+		void EventLoop::addEvent(event fd, EventHandler_t eventHandler)
 		{
 			if(!eventHandler) {
 				return;
@@ -89,7 +91,8 @@ namespace hbm {
 			{
 				std::lock_guard < std::mutex > lock(m_changeListMtx);
 				m_changeList.push_back(evi);
-				m_changeNotifier.notify();
+				static const uint64_t value = 1;
+				write(m_changeFd, &value, sizeof(value));
 			}
 		}
 
@@ -97,11 +100,12 @@ namespace hbm {
 		{
 			eventInfo_t evi;
 			evi.fd = fd;
-			evi.eventHandler = eventHandler_t(); // empty handler signals removal
+			evi.eventHandler = EventHandler_t(); // empty handler signals removal
 			{
 				std::lock_guard < std::mutex > lock(m_changeListMtx);
 				m_changeList.push_back(evi);
-				m_changeNotifier.notify();
+				static const uint64_t value = 1;
+				write(m_changeFd, &value, sizeof(value));
 			}
 		}
 
@@ -197,7 +201,8 @@ namespace hbm {
 
 		void EventLoop::stop()
 		{
-			m_stopNotifier.notify();
+			static const uint64_t value = 1;
+			write(m_stopFd, &value, sizeof(value));
 		}
 	}
 }

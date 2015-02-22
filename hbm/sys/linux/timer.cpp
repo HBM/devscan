@@ -18,38 +18,44 @@
 
 namespace hbm {
 	namespace sys {
-		Timer::Timer()
+		Timer::Timer(EventLoop &eventLoop, EventHandler_t eventHandler)
 			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
+			, m_eventLoop(eventLoop)
+			, m_eventHandler(eventHandler)
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create timer fd");
 			}
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 		}
 
 		Timer::Timer(Timer&& source)
 			: m_fd(source.m_fd)
+			, m_eventLoop(source.m_eventLoop)
+			, m_eventHandler(source.m_eventHandler)
 #ifdef _WIN32
 			, m_isRunning(source.m_isRunning)
 #endif
 		{
-			source.m_fd = -1;
-#ifdef _WIN32
-			source.m_isRunning;
-#endif
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 		}
 
-		Timer::Timer(unsigned int period_ms, bool repeated)
+		Timer::Timer(unsigned int period_ms, bool repeated, EventLoop &eventLoop, EventHandler_t eventHandler)
 			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
+			, m_eventLoop(eventLoop)
+			, m_eventHandler(eventHandler)
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create timer fd");
 			}
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 
 			set(period_ms, repeated);
 		}
 
 		Timer::~Timer()
 		{
+			m_eventLoop.eraseEvent(m_fd);
 			close(m_fd);
 		}
 
@@ -73,6 +79,17 @@ namespace hbm {
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}
 
+		int Timer::process()
+		{
+			int result = read();
+			if (result>0) {
+				if (m_eventHandler) {
+					m_eventHandler();
+				}
+			}
+			return result;
+		}
+
 		int Timer::read()
 		{
 			uint64_t timerEventCount;
@@ -85,24 +102,24 @@ namespace hbm {
 			}
 		}
 
-		int Timer::wait_for(int period_ms)
-		{
-			struct pollfd pfd;
+//		int Timer::wait_for(int period_ms)
+//		{
+//			struct pollfd pfd;
 
-			pfd.fd = m_fd;
-			pfd.events = POLLIN;
+//			pfd.fd = m_fd;
+//			pfd.events = POLLIN;
 
-			int retval = poll(&pfd, 1, period_ms);
-			if (retval!=1) {
-				return -1;
-			}
-			return read();
-		}
+//			int retval = poll(&pfd, 1, period_ms);
+//			if (retval!=1) {
+//				return -1;
+//			}
+//			return read();
+//		}
 
-		int Timer::wait()
-		{
-			return wait_for(-1);
-		}
+//		int Timer::wait()
+//		{
+//			return wait_for(-1);
+//		}
 
 		int Timer::cancel()
 		{
@@ -121,9 +138,9 @@ namespace hbm {
 			return retval;
 		}
 
-		event Timer::getFd() const
-		{
-			return m_fd;
-		}
+//		event Timer::getFd() const
+//		{
+//			return m_fd;
+//		}
 	}
 }

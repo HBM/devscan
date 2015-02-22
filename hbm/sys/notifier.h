@@ -7,28 +7,32 @@
 #define _HBM__NOTIFIER_H
 
 #include "hbm/sys/defines.h"
+
 #include "hbm/exception/exception.hpp"
 
 namespace hbm {
 	namespace sys {
+		class EventLoop;
+
 		class Notifier {
 		public:
 			/// \throws hbm::exception
-			Notifier();
+			Notifier(EventLoop& eventLoop, EventHandler_t eventHandler);
 			Notifier(Notifier&& source);
 
 			virtual ~Notifier();
 
 			int notify();
 
-			int read();
-
-			int wait();
-
-			int wait_for(int period_ms);
+			/// called by eventloop
+			int process();
 
 			/// to poll
-			event getFd() const;
+			//event getFd() const;
+
+			//int wait();
+
+			//int wait_for(int period_ms);
 
 		private:
 			/// must not be copied
@@ -36,7 +40,11 @@ namespace hbm {
 			/// must not be assigned
 			Notifier operator=(const Notifier& op);
 
+			int read();
+
 			event m_fd;
+			EventLoop& m_eventLoop;
+			EventHandler_t m_eventHandler;
 		};
 	}
 }
