@@ -1,5 +1,9 @@
 language: cpp
 
+branches:
+  except:
+    - safer_interface
+
 compiler:
   - gcc
   - clang
