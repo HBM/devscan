@@ -46,7 +46,6 @@ namespace hbm {
 		class MulticastServer
 		{
 		public:
-			//typedef std::function < int (uint8_t* pData, size_t len, const Netadapter& adapter, int &ttl) > DataHandler_t;
 			typedef std::function < int (MulticastServer* mcs) > DataHandler_t;
 
 			/// @param address the multicast group
@@ -86,29 +85,15 @@ namespace hbm {
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const std::string& data, unsigned int ttl=1) const;
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
 
-			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
+//			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
 
-			/// @param[in,out] waitTime maximum time to wait.
-			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex, std::chrono::milliseconds timeout);
+//			/// @param[in,out] waitTime maximum time to wait.
+//			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex, std::chrono::milliseconds timeout);
 
 			ssize_t receiveTelegram(void* msgbuf, size_t len, Netadapter& adapter, int &ttl);
 
 			/// @param[out] ttl ttl in the ip header (the value set by the last sender(router))
 			ssize_t receiveTelegram(void* msgbuf, size_t len, int& adapterIndex, int &ttl);
-
-//			/// poll this to get informed about received messages
-//	#ifdef _WIN32
-//			WSAEVENT getFd() const
-//			{
-//				return m_event;
-//			}
-//	#else
-//			int getFd() const
-//			{
-//				return m_ReceiveSocket;
-//			}
-//	#endif
-
 		private:
 
 			MulticastServer(const MulticastServer&);

@@ -79,6 +79,23 @@ namespace hbm {
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}
 
+		int Timer::cancel()
+		{
+			int retval = 0;
+			struct itimerspec timespec;
+
+			timerfd_gettime(m_fd, &timespec);
+			if ( (timespec.it_value.tv_sec != 0) || (timespec.it_value.tv_nsec != 0) ) {
+				// timer is running
+				retval = 1;
+			}
+
+			memset (&timespec, 0, sizeof(timespec));
+			timerfd_settime(m_fd, 0, &timespec, nullptr);
+
+			return retval;
+		}
+
 		int Timer::process()
 		{
 			int result = read();
@@ -100,23 +117,6 @@ namespace hbm {
 				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
 				return 1;
 			}
-		}
-
-		int Timer::cancel()
-		{
-			int retval = 0;
-			struct itimerspec timespec;
-
-			timerfd_gettime(m_fd, &timespec);
-			if ( (timespec.it_value.tv_sec != 0) || (timespec.it_value.tv_nsec != 0) ) {
-				// timer is running
-				retval = 1;
-			}
-
-			memset (&timespec, 0, sizeof(timespec));
-			timerfd_settime(m_fd, 0, &timespec, nullptr);
-
-			return retval;
 		}
 	}
 }
