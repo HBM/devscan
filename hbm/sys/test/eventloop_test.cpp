@@ -75,6 +75,23 @@ BOOST_AUTO_TEST_CASE(waitforend_test)
 	BOOST_CHECK_GE(delta.count(), duration.count()-3);
 }
 
+BOOST_AUTO_TEST_CASE(restart_test)
+{
+	hbm::sys::EventLoop eventLoop;
+
+	static const std::chrono::milliseconds duration(100);
+
+	for (unsigned int i=0; i<10; ++i) {
+		std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+		int result = eventLoop.execute_for(duration);
+		std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
+		std::chrono::milliseconds delta = std::chrono::duration_cast < std::chrono::milliseconds > (endTime-startTime);
+
+		BOOST_CHECK_EQUAL(result, 0);
+		BOOST_CHECK_GE(delta.count(), duration.count()-3);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(notify_test)
 {
 	unsigned int value = 0;
@@ -162,6 +179,7 @@ BOOST_AUTO_TEST_CASE(removenotifier_test)
 
 	unsigned int counter = 0;
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
+
 	{
 		// leaving this scope leads to destruction of the timer and the removal from the event loop
 		hbm::sys::Timer cyclicTimer(timerCycle, true, eventLoop, std::bind(&eventHandlerIncrement, &counter));
