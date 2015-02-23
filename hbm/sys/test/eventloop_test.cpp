@@ -172,38 +172,3 @@ BOOST_AUTO_TEST_CASE(removenotifier_test)
 
 	BOOST_CHECK_LT(counter, timerCount);
 }
-
-
-//BOOST_AUTO_TEST_CASE(severaltimers_test)
-//{
-//	static const unsigned int timerCycle = 10;
-//	static const unsigned int timerCount = 10;
-//	static const std::chrono::milliseconds duration(timerCycle * timerCount);
-//	hbm::sys::EventLoop eventLoop;
-
-//	unsigned int counter = 0;
-
-//	typedef std::vector < hbm::sys::Timer > timers_t;
-//	timers_t timers(10, eventLoop, std::bind(&eventHandlerIncrement, &counter));
-
-//	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-//		hbm::sys::Timer& timer = *iter;
-//		timer.set(timerCycle, false);
-//	}
-
-////	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-////		hbm::sys::Timer& timer = *iter;
-////		timer.set(timerCycle, false);
-////		eventLoop.eraseEvent(timer.getFd());
-////	}
-
-////	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-////		hbm::sys::Timer& timer = *iter;
-////		timer.set(timerCycle, false);
-////		eventLoop.addEvent(timer.getFd(), std::bind(&eventHandlerIncrement, &counter ,&timer));
-////	}
-
-//	int result = eventLoop.execute_for(duration);
-//	BOOST_CHECK_EQUAL(counter, timers.size());
-//	BOOST_CHECK(result == 0);
-//}

@@ -22,6 +22,9 @@
 #include "netadapter.h"
 #include "netadapterlist.h"
 
+#include "hbm/sys/defines.h"
+#include "hbm/sys/eventloop.h"
+
 #ifdef _WIN32
 #ifndef ssize_t
 typedef int ssize_t;
@@ -43,8 +46,11 @@ namespace hbm {
 		class MulticastServer
 		{
 		public:
+			//typedef std::function < int (uint8_t* pData, size_t len, const Netadapter& adapter, int &ttl) > DataHandler_t;
+			typedef std::function < int (MulticastServer* mcs) > DataHandler_t;
+
 			/// @param address the multicast group
-			MulticastServer(const std::string& address, unsigned int port, const NetadapterList& netadapterList);
+			MulticastServer(const std::string& address, unsigned int port, const NetadapterList& netadapterList, sys::EventLoop &eventLoop, DataHandler_t dataHandler);
 
 			virtual ~MulticastServer();
 
@@ -79,7 +85,10 @@ namespace hbm {
 			/// @param interfaceIp IP address of the interface to use
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const std::string& data, unsigned int ttl=1) const;
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
-			
+
+			/// called by eventloop
+			int process();
+
 			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
 
 			/// @param[in,out] waitTime maximum time to wait.
@@ -90,18 +99,18 @@ namespace hbm {
 			/// @param[out] ttl ttl in the ip header (the value set by the last sender(router))
 			ssize_t receiveTelegram(void* msgbuf, size_t len, int& adapterIndex, int &ttl);
 
-			/// poll this to get informed about received messages
-	#ifdef _WIN32
-			WSAEVENT getFd() const
-			{
-				return m_event;
-			}
-	#else
-			int getFd() const
-			{
-				return m_ReceiveSocket;
-			}
-	#endif
+//			/// poll this to get informed about received messages
+//	#ifdef _WIN32
+//			WSAEVENT getFd() const
+//			{
+//				return m_event;
+//			}
+//	#else
+//			int getFd() const
+//			{
+//				return m_ReceiveSocket;
+//			}
+//	#endif
 
 		private:
 
@@ -131,6 +140,10 @@ namespace hbm {
 			struct sockaddr_in m_receiveAddr;
 
 			const NetadapterList& m_netadapterList;
+
+			uint8_t m_recvBuffer[65536];
+			sys::EventLoop& m_eventLoop;
+			DataHandler_t m_dataHandler;
 		};
 	}
 }

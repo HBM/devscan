@@ -19,6 +19,7 @@ SET(MULTICASTSERVER_TEST
 	../netadapter.cpp
 	../netadapterlist.cpp
 	../multicastserver.cpp
+	../../sys/linux/eventloop.cpp
 	multicastserver_test.cpp
 )
 set_source_files_properties(
