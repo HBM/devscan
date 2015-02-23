@@ -29,13 +29,6 @@ namespace hbm {
 			/// @param period_ms timer interval in ms
 			int set(unsigned int period_ms, bool repeated);
 
-
-			/// called by eventloop
-			int process();
-
-			/// to poll
-			//event getFd() const;
-
 			/// timer will not signal, wait will block.
 			/// \return 1 success, timer was running; 0 success
 			int cancel();
@@ -46,15 +39,11 @@ namespace hbm {
 			/// must not be assigned
 			Timer operator=(const Timer& op);
 
+			/// called by eventloop
+			int process();
+
 			/// \return 0 if timer has not expired yet. 1 if timer has expired
 			int read();
-
-//			/// \return 0 if timer was stopped before expiration. 1 if timer has expired
-//			int wait();
-
-//			/// \return 0 if timer was stopped before expiration. 1 if timer has expired. -1 on time out
-//			int wait_for(int period_ms);
-
 
 			event m_fd;
 			EventLoop& m_eventLoop;

@@ -23,22 +23,14 @@ namespace hbm {
 			virtual ~Notifier();
 
 			int notify();
-
-			/// called by eventloop
-			int process();
-
-			/// to poll
-			//event getFd() const;
-
-			//int wait();
-
-			//int wait_for(int period_ms);
-
 		private:
 			/// must not be copied
 			Notifier(const Notifier& op);
 			/// must not be assigned
 			Notifier operator=(const Notifier& op);
+
+			/// called by eventloop
+			int process();
 
 			int read();
 

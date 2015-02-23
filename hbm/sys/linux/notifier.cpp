@@ -72,29 +72,5 @@ namespace hbm {
 			}
 
 		}
-
-//		int Notifier::wait()
-//		{
-//			return wait_for(-1);
-//		}
-
-//		int Notifier::wait_for(int period_ms)
-//		{
-//			struct pollfd pfd;
-
-//			pfd.fd = m_fd;
-//			pfd.events = POLLIN;
-
-//			int retval = poll(&pfd, 1, period_ms);
-//			if (retval!=1) {
-//				return -1;
-//			}
-//			return read();
-//		}
-
-//		event Notifier::getFd() const
-//		{
-//			return m_fd;
-//		}
 	}
 }

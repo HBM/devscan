@@ -86,9 +86,6 @@ namespace hbm {
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const std::string& data, unsigned int ttl=1) const;
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
 
-			/// called by eventloop
-			int process();
-
 			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
 
 			/// @param[in,out] waitTime maximum time to wait.
@@ -123,6 +120,9 @@ namespace hbm {
 			int setupReceiveSocket();
 
 			int dropOrAddInterface(const std::string& interfaceAddress, bool add);
+
+			/// called by eventloop
+			int process();
 
 			/// The All Hosts multicast group addresses all hosts on the same network segment.
 			const std::string m_address;
