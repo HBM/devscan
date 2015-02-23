@@ -3,6 +3,10 @@ language: cpp
 compiler:
   - gcc
   - clang
+  
+branches:
+except:
+- safer_interface
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
