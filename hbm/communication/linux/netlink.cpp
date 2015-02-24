@@ -19,8 +19,11 @@
 #include "hbm/exception/exception.hpp"
 
 namespace hbm {
-	Netlink::Netlink()
+	Netlink::Netlink(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs, sys::EventLoop &eventLoop)
 		: m_fd(socket(AF_NETLINK, SOCK_RAW | SOCK_NONBLOCK, NETLINK_ROUTE))
+		, m_netadapterlist(netadapterlist)
+		, m_mcs(mcs)
+		, m_eventloop(eventLoop)
 	{
 		if (m_fd<0) {
 			throw hbm::exception::exception("could not open netlink socket");
@@ -59,7 +62,7 @@ namespace hbm {
 		return ::recvmsg(m_fd, &msg, 0);
 	}
 
-	void Netlink::process(char *pReadBuffer, size_t bufferSize, communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs) const
+	void Netlink::processNetlinkTelegram(char *pReadBuffer, size_t bufferSize) const
 	{
 		for (struct nlmsghdr *nh = reinterpret_cast <struct nlmsghdr *> (pReadBuffer); NLMSG_OK (nh, bufferSize); nh = NLMSG_NEXT (nh, bufferSize)) {
 			if (nh->nlmsg_type == NLMSG_DONE) {
@@ -69,7 +72,7 @@ namespace hbm {
 				::syslog(LOG_ERR, "error processing netlink events");
 				break;
 			} else {
-				netadapterlist.update();
+				m_netadapterlist.update();
 				switch(nh->nlmsg_type) {
 				case RTM_NEWADDR:
 					{
@@ -81,11 +84,11 @@ namespace hbm {
 								if (rth->rta_type == IFA_LOCAL) {
 									// this is to be ignored if there are more than one ipv4 addresses assigned to the interface!
 									try {
-										communication::Netadapter adapter = netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
+										communication::Netadapter adapter = m_netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
 										if(adapter.getIpv4Addresses().size()==1) {
 											struct in_addr* pIn = reinterpret_cast < struct in_addr* > (RTA_DATA(rth));
 											std::string interfaceAddress = inet_ntoa(*pIn);
-											mcs.addInterface(interfaceAddress);
+											m_mcs.addInterface(interfaceAddress);
 										}
 									} catch(const hbm::exception::exception&) {
 									}
@@ -105,11 +108,11 @@ namespace hbm {
 								if (rth->rta_type == IFA_LOCAL) {
 									// this is to be ignored if there is another ipv4 address left for the interface!
 									try {
-										communication::Netadapter adapter = netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
+										communication::Netadapter adapter = m_netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
 										if(adapter.getIpv4Addresses().empty()==true) {
 											const struct in_addr* pIn = reinterpret_cast < const struct in_addr* > (RTA_DATA(rth));
 											std::string interfaceAddress = inet_ntoa(*pIn);
-											mcs.dropInterface(interfaceAddress);
+											m_mcs.dropInterface(interfaceAddress);
 										}
 									} catch(const hbm::exception::exception&) {
 									}
@@ -126,12 +129,12 @@ namespace hbm {
 		}
 	}
 
-	ssize_t Netlink::receiveAndProcess(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs) const
+	ssize_t Netlink::process() const
 	{
 		char readBuffer[communication::MAX_DATAGRAM_SIZE];
 		ssize_t nBytes = receive(readBuffer, sizeof(readBuffer));
 		if (nBytes>0) {
-			process(readBuffer, nBytes, netadapterlist, mcs);
+			processNetlinkTelegram(readBuffer, nBytes);
 		}
 		return nBytes;
 	}

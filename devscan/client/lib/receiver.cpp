@@ -22,20 +22,20 @@ namespace hbm {
 
 		Receiver::Receiver()
 			: m_netadapterList()
-			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList)
-			, m_timer(1000)
+			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList, m_eventloop, std::bind(&Receiver::receiveEventHandler, this))
+			, m_timer(1000, true, m_eventloop, std::bind(&Receiver::retireEventHandler, this))
 #ifndef _WIN32
-			, m_netlink()
+			, m_netlink(m_netadapterList, m_scanner, m_eventloop)
 #endif
 		{
 		}
 
-#ifndef _WIN32
-		ssize_t Receiver::netLinkEventHandler()
-		{
-			return m_netlink.receiveAndProcess(m_netadapterList, m_scanner);
-		}
-#endif
+//#ifndef _WIN32
+//		ssize_t Receiver::netLinkEventHandler()
+//		{
+//			return m_netlink.process();
+//		}
+//#endif
 
 		ssize_t Receiver::receiveEventHandler()
 		{
@@ -63,12 +63,8 @@ namespace hbm {
 
 		ssize_t Receiver::retireEventHandler()
 		{
-			int result = m_timer.read();
-			if (result>0) {
-				m_deviceMonitor.checkForExpiredAnnouncements();
-			}
-
-			return result;
+			m_deviceMonitor.checkForExpiredAnnouncements();
+			return 0;
 		}
 
 
@@ -95,11 +91,11 @@ namespace hbm {
 			sys::EventLoop evl;
 
 			m_scanner.start();
-			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-#ifndef _WIN32
-			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-#endif
-			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
+//			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
+//#ifndef _WIN32
+//			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
+//#endif
+//			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
 
 			m_scanner.addAllInterfaces();
 			evl.execute();
@@ -117,11 +113,11 @@ namespace hbm {
 			sys::EventLoop evl;
 
 			m_scanner.start();
-			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-#ifndef _WIN32
-			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-#endif
-			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
+//			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
+//#ifndef _WIN32
+//			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
+//#endif
+//			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
 
 			m_scanner.addAllInterfaces();
 			evl.execute_for(timeOfExecution);
