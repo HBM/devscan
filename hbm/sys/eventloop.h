@@ -58,11 +58,9 @@ namespace hbm {
 			std::vector < HANDLE > m_handles;
 #else
 			int m_epollfd;
-			int m_changeFd;
-			int m_stopFd;
 #endif
-			//Notifier m_changeNotifier;
-			//Notifier m_stopNotifier;
+			event m_changeFd;
+			event m_stopFd;
 
 			eventInfo_t m_changeEvent;
 

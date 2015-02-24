@@ -704,13 +704,22 @@ namespace hbm {
 				return err;
 			}
 
+#ifdef _WIN32
+			m_eventLoop.addEvent(m_event, std::bind(&MulticastServer::process, this));
+#else
 			m_eventLoop.addEvent(m_ReceiveSocket, std::bind(&MulticastServer::process, this));
+#endif
 			return 0;
 		}
 
 		void MulticastServer::stop()
 		{
+#ifdef _WIN32
+			m_eventLoop.eraseEvent(m_event);
+#else
 			m_eventLoop.eraseEvent(m_ReceiveSocket);
+#endif
+
 
 			if (m_SendSocket != NO_SOCKET) {
 	#ifdef _WIN32
