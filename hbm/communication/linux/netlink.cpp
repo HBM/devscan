@@ -39,7 +39,7 @@ namespace hbm {
 		if (::bind(m_fd, reinterpret_cast < struct sockaddr *> (&netLinkAddr), sizeof(netLinkAddr))<0) {
 			throw hbm::exception::exception("could not bind netlink socket");
 		}
-		m_eventloop.addEvent(m_fd, std::bind(&NetLink::process, this));
+		m_eventloop.addEvent(m_fd, std::bind(&Netlink::process, this));
 	}
 
 	Netlink::~Netlink()
