@@ -92,7 +92,9 @@ namespace hbm {
 				std::lock_guard < std::mutex > lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 				static const uint64_t value = 1;
-				write(m_changeFd, &value, sizeof(value));
+				if (write(m_changeFd, &value, sizeof(value))<0) {
+					syslog(LOG_ERR, "notifying new event for eventloop failed");
+				}
 			}
 		}
 
@@ -105,7 +107,9 @@ namespace hbm {
 				std::lock_guard < std::mutex > lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 				static const uint64_t value = 1;
-				write(m_changeFd, &value, sizeof(value));
+				if (write(m_changeFd, &value, sizeof(value))<0) {
+					syslog(LOG_ERR, "notifying removal of an event from eventloop failed");
+				}
 			}
 		}
 
@@ -202,7 +206,9 @@ namespace hbm {
 		void EventLoop::stop()
 		{
 			static const uint64_t value = 1;
-			write(m_stopFd, &value, sizeof(value));
+			if (write(m_stopFd, &value, sizeof(value))<0) {
+				syslog(LOG_ERR, "notifying stop of eventloop failed");
+			}
 		}
 	}
 }
