@@ -6,7 +6,7 @@ compiler:
   
 branches:
 except:
-- safer_interface
+- /^safer.*$/ 
 
 before_install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
