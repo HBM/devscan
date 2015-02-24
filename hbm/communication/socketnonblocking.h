@@ -6,7 +6,6 @@
 #define __HBM__SOCKETNONBLOCKING_H
 
 #include <string>
-#include <memory>
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -29,23 +28,16 @@ namespace hbm
 		class SocketNonblocking
 		{
 		public:
-			SocketNonblocking();
+			typedef std::function < int (SocketNonblocking* mcs) > DataHandler_t;
+			SocketNonblocking(sys::EventLoop &eventLoop, DataHandler_t dataHandler);
+
+			/// \throw std::runtime_error on error
+			SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataHandler_t dataHandler);
 			virtual ~SocketNonblocking();
 
 			/// \return 0: success; -1: error
 			int connect(const std::string& address, const std::string& port);
 			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len);
-
-			/// for server side:bind socket to a port
-			int bind(uint16_t Port);
-
-			/// Listens to connecting clients, a server call
-			/// @param numPorts   Maximum length of the queue of pending connections.
-			int listenToClient(int numPorts = 5);
-
-			/// accepts a new connecting client.
-			/// \return On success, the worker socket for the new connected client is returned. NULL on error.
-			std::unique_ptr < SocketNonblocking > acceptClient();
 
 			ssize_t sendBlock(const void* pBlock, size_t len, bool more);
 
@@ -62,27 +54,30 @@ namespace hbm
 
 			bool checkSockAddr(const struct sockaddr* pCheckSockAddr, socklen_t checkSockAddrLen) const;
 
-			void stop();
+			void disconnect();
 
 		protected:
-			SocketNonblocking(int fd);
-
 			/// should not be copied
 			SocketNonblocking(const SocketNonblocking& op);
 
 			/// should not be assigned
 			SocketNonblocking& operator= (const SocketNonblocking& op);
 
-			/// \return 0 on success; -1 on error
 			int init(int domain);
 			int setSocketOptions();
 
+			/// called by eventloop
+			int process();
+
 			int m_fd;
 			#ifdef _WIN32
-					WSAEVENT m_event;
+			WSAEVENT m_event;
 			#endif
 
 			BufferedReader m_bufferedReader;
+
+			sys::EventLoop& m_eventLoop;
+			DataHandler_t m_dataHandler;
 		};
 	}
 }

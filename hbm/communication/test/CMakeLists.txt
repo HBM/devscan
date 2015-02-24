@@ -45,7 +45,9 @@ add_test(multicastserver_test multicastserver.test
 
 SET(SOCKETNONBLOCKING_TEST
 	../linux/socketnonblocking.cpp
+	../linux/tcpacceptor.cpp
 	../bufferedreader.cpp
+	../../sys/linux/eventloop.cpp
 	socketnonblocking_test.cpp
 )
 set_source_files_properties(

@@ -126,7 +126,6 @@ namespace hbm {
 
 			const NetadapterList& m_netadapterList;
 
-			uint8_t m_recvBuffer[65536];
 			sys::EventLoop& m_eventLoop;
 			DataHandler_t m_dataHandler;
 		};

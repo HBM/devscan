@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(stop_test)
 	static const std::chrono::milliseconds waitDuration(300);
 
 	std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, &eventLoop));
+	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventLoop)));
 	std::this_thread::sleep_for(waitDuration);
 	eventLoop.stop();
 	worker.join();

@@ -7,7 +7,6 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/uio.h> //writev
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -28,21 +27,28 @@
 const time_t TIMEOUT_CONNECT_S = 5;
 
 
-hbm::communication::SocketNonblocking::SocketNonblocking()
+hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop, DataHandler_t dataHandler)
 	: m_fd(-1)
 	, m_bufferedReader()
+	, m_eventLoop(eventLoop)
+	, m_dataHandler(dataHandler)
 {
 }
 
-hbm::communication::SocketNonblocking::SocketNonblocking(int fd)
+hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataHandler_t dataHandler)
 	: m_fd(fd)
 	, m_bufferedReader()
+	, m_eventLoop(eventLoop)
+	, m_dataHandler(dataHandler)
 {
+	if (setSocketOptions()<0) {
+		throw std::runtime_error("error setting socket options");
+	}
 }
 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
 {
-	stop();
+	disconnect();
 }
 
 event hbm::communication::SocketNonblocking::getFd() const
@@ -96,13 +102,14 @@ int hbm::communication::SocketNonblocking::setSocketOptions()
 
 int hbm::communication::SocketNonblocking::init(int domain)
 {
-
 	m_fd = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (m_fd==-1) {
 		return -1;
 	}
 
-	return setSocketOptions();
+	if (setSocketOptions()<0) {
+		return -1;
+	}
 }
 
 int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port)
@@ -159,69 +166,84 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 	if(value!=0) {
 		return -1;
 	}
+
+	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
+
 	return 0;
 }
 
-int hbm::communication::SocketNonblocking::bind(uint16_t Port)
+//int hbm::communication::SocketNonblocking::bind(uint16_t Port)
+//{
+//	//ipv6 does work for ipv4 too!
+//	sockaddr_in6 address;
+
+//	memset(&address, 0, sizeof(address));
+//	address.sin6_family = AF_INET6;
+//	address.sin6_addr = in6addr_any;
+//	address.sin6_port = htons(Port);
+
+//	int retVal = init(address.sin6_family);
+//	if (retVal == -1) {
+//		syslog(LOG_ERR, "%s: Socket initialization failed '%s'", __FUNCTION__ , strerror(errno));
+//		return retVal;
+//	}
+//	retVal = ::bind(m_fd, reinterpret_cast<sockaddr*>(&address), sizeof(address));
+//	if (retVal == -1) {
+//		syslog(LOG_ERR, "%s: Binding socket to port initialization failed '%s'", __FUNCTION__ , strerror(errno));
+//	}
+
+//	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
+
+//	return retVal;
+//}
+
+//std::unique_ptr < hbm::communication::SocketNonblocking > hbm::communication::SocketNonblocking::acceptClient(DataHandler_t dataHandler)
+//{
+//	sockaddr_in SockAddr;
+//	// the length of the client's address
+//	socklen_t socketAddressLen = sizeof(SockAddr);
+
+//	int err;
+
+//	struct pollfd pfd;
+
+//	pfd.fd = m_fd;
+//	pfd.events = POLLIN;
+//	do {
+//		err = poll(&pfd, 1, -1);
+//	} while((err==-1) && (errno==EINTR));
+
+//	if(err!=1) {
+//		syslog(LOG_ERR, "%s: Poll failed!", __FUNCTION__);
+//		return std::unique_ptr < SocketNonblocking >();
+//	}	else if(pfd.revents & POLLIN) {
+//		// the new socket file descriptor returned by the accept system call
+//		int clientFd;
+
+//		clientFd = accept(m_fd, reinterpret_cast<sockaddr*>(&SockAddr), &socketAddressLen);
+//		if (clientFd >= 0) {
+//			std::unique_ptr < SocketNonblocking > p( new SocketNonblocking(clientFd, m_eventLoop, dataHandler));
+//			p->setSocketOptions();
+//			return p;
+//		} else {
+//			syslog(LOG_ERR, "%s: Accept failed!", __FUNCTION__);
+//		}
+//	}
+//	return std::unique_ptr < SocketNonblocking >();
+//}
+
+//int hbm::communication::SocketNonblocking::listenToClient(int numPorts)
+//{
+//	return listen(m_fd, numPorts);
+//}
+
+int hbm::communication::SocketNonblocking::process()
 {
-	//ipv6 does work for ipv4 too!
-	sockaddr_in6 address;
-
-	memset(&address, 0, sizeof(address));
-	address.sin6_family = AF_INET6;
-	address.sin6_addr = in6addr_any;
-	address.sin6_port = htons(Port);
-
-	int retVal = init(address.sin6_family);
-	if (retVal == -1) {
-		syslog(LOG_ERR, "%s: Socket initialization failed '%s'", __FUNCTION__ , strerror(errno));
-		return retVal;
+	if (m_dataHandler) {
+		return m_dataHandler(this);
+	} else {
+		return -1;
 	}
-	retVal = ::bind(m_fd, reinterpret_cast<sockaddr*>(&address), sizeof(address));
-	if (retVal == -1) {
-		syslog(LOG_ERR, "%s: Binding socket to port initialization failed '%s'", __FUNCTION__ , strerror(errno));
-	}
-	return retVal;
-}
-
-std::unique_ptr < hbm::communication::SocketNonblocking > hbm::communication::SocketNonblocking::acceptClient()
-{
-	sockaddr_in SockAddr;
-	// the length of the client's address
-	socklen_t socketAddressLen = sizeof(SockAddr);
-
-	int err;
-
-	struct pollfd pfd;
-
-	pfd.fd = m_fd;
-	pfd.events = POLLIN;
-	do {
-		err = poll(&pfd, 1, -1);
-	} while((err==-1) && (errno==EINTR));
-
-	if(err!=1) {
-		syslog(LOG_ERR, "%s: Poll failed!", __FUNCTION__);
-		return std::unique_ptr < SocketNonblocking >();
-	}	else if(pfd.revents & POLLIN) {
-		// the new socket file descriptor returned by the accept system call
-		int clientFd;
-
-		clientFd = accept(m_fd, reinterpret_cast<sockaddr*>(&SockAddr), &socketAddressLen);
-		if (clientFd >= 0) {
-			std::unique_ptr < SocketNonblocking > p( new SocketNonblocking(clientFd));
-			p->setSocketOptions();
-			return p;
-		} else {
-			syslog(LOG_ERR, "%s: Accept failed!", __FUNCTION__);
-		}
-	}
-	return std::unique_ptr < SocketNonblocking >();
-}
-
-int hbm::communication::SocketNonblocking::listenToClient(int numPorts)
-{
-	return listen(m_fd, numPorts);
 }
 
 ssize_t hbm::communication::SocketNonblocking::receive(void* pBlock, size_t size)
@@ -346,8 +368,9 @@ bool hbm::communication::SocketNonblocking::checkSockAddr(const struct ::sockadd
 	return false;
 }
 
-void hbm::communication::SocketNonblocking::stop()
+void hbm::communication::SocketNonblocking::disconnect()
 {
+	m_eventLoop.eraseEvent(m_fd);
 	shutdown(m_fd, SHUT_RDWR);
 	::close(m_fd);
 	m_fd = -1;
