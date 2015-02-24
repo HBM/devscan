@@ -3,11 +3,10 @@
 // See file LICENSE provided
 
 
-#ifndef _HBM__NOTIFIER_H
-#define _HBM__NOTIFIER_H
+#ifndef _HBM__SYS_NOTIFIER_H
+#define _HBM__SYS_NOTIFIER_H
 
 #include "hbm/sys/defines.h"
-
 #include "hbm/exception/exception.hpp"
 
 namespace hbm {

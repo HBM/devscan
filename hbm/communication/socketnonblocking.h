@@ -28,11 +28,12 @@ namespace hbm
 		class SocketNonblocking
 		{
 		public:
-			typedef std::function < int (SocketNonblocking* mcs) > DataHandler_t;
-			SocketNonblocking(sys::EventLoop &eventLoop, DataHandler_t dataHandler);
+			/// called on the arrival of data
+			typedef std::function < int (SocketNonblocking* pSocket) > DataCb_t;
+			SocketNonblocking(sys::EventLoop &eventLoop, DataCb_t dataHandler);
 
 			/// \throw std::runtime_error on error
-			SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataHandler_t dataHandler);
+			SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler);
 			virtual ~SocketNonblocking();
 
 			/// \return 0: success; -1: error
@@ -48,8 +49,6 @@ namespace hbm
 			/// @param @msTimeout -1 for infinite
 			ssize_t receiveComplete(void* pBlock, size_t len, int msTimeout = -1);
 
-			event getFd() const;
-
 			bool isFirewire() const;
 
 			bool checkSockAddr(const struct sockaddr* pCheckSockAddr, socklen_t checkSockAddrLen) const;
@@ -63,7 +62,6 @@ namespace hbm
 			/// should not be assigned
 			SocketNonblocking& operator= (const SocketNonblocking& op);
 
-			int init(int domain);
 			int setSocketOptions();
 
 			/// called by eventloop
@@ -77,7 +75,7 @@ namespace hbm
 			BufferedReader m_bufferedReader;
 
 			sys::EventLoop& m_eventLoop;
-			DataHandler_t m_dataHandler;
+			DataCb_t m_dataHandler;
 		};
 	}
 }

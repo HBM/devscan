@@ -24,10 +24,13 @@ namespace hbm {
 	namespace communication {
 		class TcpAcceptor {
 		public:
-			typedef std::function < void (std::unique_ptr < SocketNonblocking >) > Cb_t;
-			typedef std::unique_ptr <SocketNonblocking > worker_t;
+			/// deliveres the worker socket for an accepted client
+			typedef std::unique_ptr <SocketNonblocking > workerSocket_t;
+			typedef std::function < void (workerSocket_t) > Cb_t;
 
-			TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataHandler_t workerDataHandler);
+			/// \param acceptCb called when accepting a new tcp client
+			/// \param workerDataHandler provided to the worker socket that is created for the connecting client
+			TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
 			virtual ~TcpAcceptor();
 
 			int start(uint16_t port, int backlog);
@@ -57,12 +60,12 @@ namespace hbm {
 
 			/// accepts a new connecting client.
 			/// \return On success, the worker socket for the new connected client is returned. -1 on error.
-			worker_t acceptClient();
+			workerSocket_t acceptClient();
 
 			int m_listeningSocket;
 			sys::EventLoop& m_eventLoop;
 			Cb_t m_acceptCb;
-			SocketNonblocking::DataHandler_t m_workerDataHandler;
+			SocketNonblocking::DataCb_t m_workerDataHandler;
 		};
 	}
 }

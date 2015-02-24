@@ -47,7 +47,7 @@ namespace hbm {
 			}
 
 
-			void serverFixture::acceptCb(TcpAcceptor::worker_t worker)
+			void serverFixture::acceptCb(TcpAcceptor::workerSocket_t worker)
 			{
 				m_workers.insert(std::move(worker));
 			}

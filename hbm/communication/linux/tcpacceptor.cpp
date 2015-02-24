@@ -19,7 +19,7 @@
 
 namespace hbm {
 	namespace communication {
-		TcpAcceptor::TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataHandler_t workerDataHandler)
+		TcpAcceptor::TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler)
 			: m_listeningSocket(-1)
 			, m_eventLoop(eventLoop)
 			, m_acceptCb(acceptCb)
@@ -29,6 +29,7 @@ namespace hbm {
 
 		TcpAcceptor::~TcpAcceptor()
 		{
+			stop();
 		}
 
 		int TcpAcceptor::start(uint16_t port, int backlog)
@@ -82,7 +83,7 @@ namespace hbm {
 			return 0;
 		}
 
-		TcpAcceptor::worker_t TcpAcceptor::acceptClient()
+		TcpAcceptor::workerSocket_t TcpAcceptor::acceptClient()
 		{
 			sockaddr_in SockAddr;
 			// the length of the client's address
@@ -91,17 +92,17 @@ namespace hbm {
 
 			if (clientFd<0) {
 				syslog(LOG_ERR, "%s: Accept failed!", __FUNCTION__);
-				return worker_t();
+				return workerSocket_t();
 			}
 
 
-			return worker_t(new SocketNonblocking(clientFd, m_eventLoop, m_workerDataHandler));
+			return workerSocket_t(new SocketNonblocking(clientFd, m_eventLoop, m_workerDataHandler));
 		}
 
 
 		int TcpAcceptor::process()
 		{
-			worker_t worker = acceptClient();
+			workerSocket_t worker = acceptClient();
 			if (!worker) {
 				return -1;
 			}

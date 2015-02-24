@@ -68,7 +68,7 @@ namespace hbm {
 			changelist_t m_changeList;
 			std::mutex m_changeListMtx;
 
-			/// events handeled by event loop
+			/// events handled by event loop
 			eventInfos_t m_eventInfos;
 		};
 	}

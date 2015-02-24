@@ -14,11 +14,12 @@
 
 #include <errno.h>
 
-
 #include "hbm/sys/eventloop.h"
 
 namespace hbm {
 	namespace sys {
+		static const unsigned int MAXEVENTS = 16;
+
 		EventLoop::EventLoop()
 			: m_epollfd(epoll_create(1)) // parameter is ignored but must be greater than 0
 			, m_changeFd(eventfd(0, EFD_NONBLOCK))
@@ -116,7 +117,6 @@ namespace hbm {
 		int EventLoop::execute()
 		{
 			int nfds;
-			static const unsigned int MAXEVENTS = 16;
 			struct epoll_event events[MAXEVENTS];
 
 			while (true) {
@@ -160,7 +160,6 @@ namespace hbm {
 			}
 
 			int nfds;
-			static const unsigned int MAXEVENTS = 16;
 			struct epoll_event events[MAXEVENTS];
 
 			while (true) {

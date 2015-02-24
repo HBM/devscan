@@ -22,7 +22,6 @@
 #include "netadapter.h"
 #include "netadapterlist.h"
 
-#include "hbm/sys/defines.h"
 #include "hbm/sys/eventloop.h"
 
 #ifdef _WIN32
@@ -84,11 +83,6 @@ namespace hbm {
 			/// @param interfaceIp IP address of the interface to use
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const std::string& data, unsigned int ttl=1) const;
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
-
-//			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
-
-//			/// @param[in,out] waitTime maximum time to wait.
-//			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex, std::chrono::milliseconds timeout);
 
 			ssize_t receiveTelegram(void* msgbuf, size_t len, Netadapter& adapter, int &ttl);
 

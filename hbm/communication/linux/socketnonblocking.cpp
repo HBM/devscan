@@ -27,7 +27,7 @@
 const time_t TIMEOUT_CONNECT_S = 5;
 
 
-hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop, DataHandler_t dataHandler)
+hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop, DataCb_t dataHandler)
 	: m_fd(-1)
 	, m_bufferedReader()
 	, m_eventLoop(eventLoop)
@@ -35,7 +35,7 @@ hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLo
 {
 }
 
-hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataHandler_t dataHandler)
+hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler)
 	: m_fd(fd)
 	, m_bufferedReader()
 	, m_eventLoop(eventLoop)
@@ -51,11 +51,6 @@ hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
 {
 	disconnect();
-}
-
-event hbm::communication::SocketNonblocking::getFd() const
-{
-	return m_fd;
 }
 
 int hbm::communication::SocketNonblocking::setSocketOptions()
@@ -102,18 +97,6 @@ int hbm::communication::SocketNonblocking::setSocketOptions()
 	return 0;
 }
 
-int hbm::communication::SocketNonblocking::init(int domain)
-{
-	m_fd = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
-	if (m_fd==-1) {
-		return -1;
-	}
-
-	if (setSocketOptions()<0) {
-		return -1;
-	}
-}
-
 int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port)
 {
 	struct addrinfo hints;
@@ -137,13 +120,17 @@ int hbm::communication::SocketNonblocking::connect(const std::string &address, c
 
 int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len)
 {
-	int err = init(domain);
-	if (err<0) {
-		return err;
+	m_fd = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
+	if (m_fd==-1) {
+		return -1;
 	}
 
-	err = ::connect(m_fd, pSockAddr, len);
-	if(err==0) {
+	if (setSocketOptions()<0) {
+		return -1;
+	}
+
+	int err = ::connect(m_fd, pSockAddr, len);
+	if (err==0) {
 		return 0;
 	}
 

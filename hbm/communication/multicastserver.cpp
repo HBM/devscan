@@ -117,9 +117,6 @@ namespace hbm {
 				::syslog(LOG_ERR, "WSAEventSelect failed!");
 				return -1;
 			}
-			//// switch to blocking
-			//u_long value = 0;
-			//::ioctlsocket(m_ReceiveSocket, FIONBIO, &value);
 	#endif
 
 
@@ -176,104 +173,21 @@ namespace hbm {
 			}
 
 
-//			// on simulation we want to be able to have scan daemon and ckient on the same machine. Hence we need to receive the stuff send by ourselves.
-////	#ifdef _HBM_HARDWARE
-//			{
-//				// we do not want to receive the stuff we where sending
-//				unsigned char value = 0;
-//	#ifdef _WIN32
-//				if (setsockopt(m_SendSocket, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast <char* > (&value), sizeof(value))) {
-//	#else
-//				if (setsockopt(m_SendSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &value, sizeof(value))) {
-//	#endif
-//					::syslog(LOG_ERR, "Error setsockopt IP_MULTICAST_LOOP!");
-//					return -1;
-//				}
-//			}
-////	#endif
+			{
+				// we do not want to receive the stuff we where sending
+				unsigned char value = 0;
+	#ifdef _WIN32
+				if (setsockopt(m_SendSocket, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast <char* > (&value), sizeof(value))) {
+	#else
+				if (setsockopt(m_SendSocket, IPPROTO_IP, IP_MULTICAST_LOOP, &value, sizeof(value))) {
+	#endif
+					::syslog(LOG_ERR, "Error setsockopt IP_MULTICAST_LOOP!");
+					return -1;
+				}
+			}
 
 			return 0;
 		}
-
-//		ssize_t MulticastServer::receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex)
-//		{
-//			int retval;
-
-//			if (m_ReceiveSocket == NO_SOCKET) {
-//				return -1;
-//			}
-
-//#ifdef _WIN32
-//			fd_set rfds;
-//			FD_ZERO(&rfds);
-//			FD_SET(m_ReceiveSocket, &rfds);
-
-//			retval = select(static_cast <int> (m_ReceiveSocket)+1, &rfds, NULL, NULL, NULL);
-//#else
-//			struct pollfd pfd;
-//			pfd.fd = m_ReceiveSocket;
-//			pfd.events = POLLIN;
-
-//			do {
-//				retval = poll(&pfd, 1, -1);
-//			} while ((retval == -1) && (errno == EINTR));
-
-//			if (pfd.revents & POLLNVAL) {
-//				// recognize that socket is closed!
-//				return -1;
-//			}
-//#endif
-
-//			if (retval > 0) {
-//				int ttl;
-//				retval = receiveTelegram(msgbuf, len, adapterIndex, ttl);
-//			}
-
-//			return retval;
-//		}
-
-//		ssize_t MulticastServer::receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex, std::chrono::milliseconds timeout)
-//		{
-//			int milliSeconds = static_cast < int > (timeout.count());
-
-//			if (m_ReceiveSocket == NO_SOCKET) {
-//				return -1;
-//			}
-
-//			int retval;
-//	#ifdef _WIN32
-//			fd_set rfds;
-//			FD_ZERO(&rfds);
-//			FD_SET(m_ReceiveSocket, &rfds);
-//			struct timeval waitTime;
-//			waitTime.tv_sec = milliSeconds / 1000;;
-//			unsigned int rest = milliSeconds % 1000;
-
-//			waitTime.tv_usec = static_cast < long > (rest*1000);
-
-//			retval = select(static_cast < int > (m_ReceiveSocket) + 1, &rfds, NULL, NULL, &waitTime);
-//	#else
-//			struct pollfd pfd;
-//			pfd.fd = m_ReceiveSocket;
-//			pfd.events = POLLIN;
-
-//			do {
-//				retval = poll(&pfd, 1, milliSeconds);
-//			} while((retval==-1) && (errno==EINTR) );
-
-//			if(pfd.revents & POLLNVAL) {
-//				// recognize that socket is closed!
-//				return -1;
-//			}
-//	#endif
-
-//			if (retval > 0) {
-//				int ttl;
-//				retval = receiveTelegram(msgbuf, len, adapterIndex, ttl);
-//			}
-
-//			return retval;
-//		}
 
 		int MulticastServer::dropInterface(const std::string& interfaceAddress)
 		{
@@ -394,15 +308,6 @@ namespace hbm {
 			} else {
 				return -1;
 			}
-//			Netadapter adapter;
-//			int ttl;
-//			int result = receiveTelegram(m_recvBuffer, sizeof(m_recvBuffer), adapter, ttl);
-//			if (result>0) {
-//				if (m_dataHandler) {
-//					m_dataHandler(m_recvBuffer, result, adapter, ttl);
-//				}
-//			}
-//			return result;
 		}
 
 		ssize_t MulticastServer::receiveTelegram(void* msgbuf, size_t len, Netadapter& adapter, int& ttl)
