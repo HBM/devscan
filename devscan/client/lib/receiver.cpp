@@ -88,17 +88,9 @@ namespace hbm {
 
 		void Receiver::start()
 		{
-			sys::EventLoop evl;
-
 			m_scanner.start();
-//			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-//#ifndef _WIN32
-//			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-//#endif
-//			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
-
 			m_scanner.addAllInterfaces();
-			evl.execute();
+			m_eventloop.execute();
 
 #ifndef _WIN32
 			m_netlink.stop();
@@ -110,17 +102,10 @@ namespace hbm {
 
 		void Receiver::start_for(std::chrono::milliseconds timeOfExecution)
 		{
-			sys::EventLoop evl;
 
 			m_scanner.start();
-//			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-//#ifndef _WIN32
-//			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-//#endif
-//			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
-
 			m_scanner.addAllInterfaces();
-			evl.execute_for(timeOfExecution);
+			m_eventloop.execute_for(timeOfExecution);
 
 #ifndef _WIN32
 			m_netlink.stop();
