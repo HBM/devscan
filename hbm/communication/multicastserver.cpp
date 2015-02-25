@@ -325,6 +325,21 @@ namespace hbm {
 			return nbytes;
 		}
 
+		ssize_t MulticastServer::receiveTelegram(void* msgbuf, size_t len, std::string& adapterName, int& ttl)
+		{
+			int interfaceIndex = 0;
+			ssize_t nbytes = receiveTelegram(msgbuf, len, interfaceIndex, ttl);
+			if(nbytes>0) {
+				try {
+					adapterName = m_netadapterList.getAdapterByInterfaceIndex(interfaceIndex).getName();
+				} catch( const hbm::exception::exception&) {
+					::syslog(LOG_ERR, "%s no interface with index %d!", __FUNCTION__, interfaceIndex);
+					nbytes = -1;
+				}
+			}
+			return nbytes;
+		}
+
 		ssize_t MulticastServer::receiveTelegram(void* msgbuf, size_t len, int& adapterIndex, int& ttl)
 		{
 			// we do use recvmsg here because we get some additional information: The interface we received from.

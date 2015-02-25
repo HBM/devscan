@@ -156,7 +156,7 @@ namespace hbm {
 			}
 		}
 
-		void DeviceMonitor::checkForExpiredAnnouncements()
+		ssize_t DeviceMonitor::checkForExpiredAnnouncements()
 		{
 			std::chrono::steady_clock::time_point timeNow = std::chrono::steady_clock::now();
 
@@ -176,6 +176,7 @@ namespace hbm {
 					++iter;
 				}
 			}
+			return 0;
 		}
 	}
 }

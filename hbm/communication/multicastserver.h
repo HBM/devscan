@@ -85,6 +85,7 @@ namespace hbm {
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
 
 			ssize_t receiveTelegram(void* msgbuf, size_t len, Netadapter& adapter, int &ttl);
+			ssize_t receiveTelegram(void* msgbuf, size_t len, std::string& adapterName, int& ttl);
 
 			/// @param[out] ttl ttl in the ip header (the value set by the last sender(router))
 			ssize_t receiveTelegram(void* msgbuf, size_t len, int& adapterIndex, int &ttl);

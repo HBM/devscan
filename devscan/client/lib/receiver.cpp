@@ -9,7 +9,6 @@
 
 
 
-#include "hbm/communication/netadapter.h"
 #include "hbm/sys/eventloop.h"
 
 #include "receiver.h"
@@ -22,51 +21,27 @@ namespace hbm {
 
 		Receiver::Receiver()
 			: m_netadapterList()
-			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList, m_eventloop, std::bind(&Receiver::receiveEventHandler, this))
-			, m_timer(1000, true, m_eventloop, std::bind(&Receiver::retireEventHandler, this))
+			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList, m_eventloop, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1))
+			, m_timer(1000, true, m_eventloop, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)))
 #ifndef _WIN32
 			, m_netlink(m_netadapterList, m_scanner, m_eventloop)
 #endif
 		{
 		}
 
-//#ifndef _WIN32
-//		ssize_t Receiver::netLinkEventHandler()
-//		{
-//			return m_netlink.process();
-//		}
-//#endif
-
-		ssize_t Receiver::receiveEventHandler()
+		ssize_t Receiver::receiveEventHandler(communication::MulticastServer* pMcs)
 		{
 			// receive announcement
 			char readBuffer[communication::MAX_DATAGRAM_SIZE];
 			int ttl;
-			int adapterIndex;
-			ssize_t nBytes = m_scanner.receiveTelegram(readBuffer, sizeof(readBuffer), adapterIndex, ttl);
+			std::string adapterName;
+			ssize_t nBytes = pMcs->receiveTelegram(readBuffer, sizeof(readBuffer), adapterName, ttl);
 //			std::cerr << "Receiver::receiveEventHandler len=" << nBytes << ": \"" << readBuffer << "\"" << std::endl;
 			if(nBytes > 0) {
-				std::string interfaceName = "Err";
-				try {
-					// getAdapterByInterfaceIndex may throw an exception, i.e. it does on 0
-					communication::Netadapter adapter = communication::NetadapterList().getAdapterByInterfaceIndex(adapterIndex);
-					interfaceName = adapter.getName();
-				}
-				catch(...) {
-					interfaceName = "Undef";
-					interfaceName.append(std::to_string(adapterIndex));
-				}
-				m_deviceMonitor.processReceivedAnnouncement(interfaceName, std::string(readBuffer, nBytes));
+				m_deviceMonitor.processReceivedAnnouncement(adapterName, std::string(readBuffer, nBytes));
 			}
 			return nBytes;
 		}
-
-		ssize_t Receiver::retireEventHandler()
-		{
-			m_deviceMonitor.checkForExpiredAnnouncements();
-			return 0;
-		}
-
 
 		void Receiver::setAnnounceCb(announceCb_t cb)
 		{
@@ -91,12 +66,6 @@ namespace hbm {
 			m_scanner.start();
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute();
-
-#ifndef _WIN32
-			m_netlink.stop();
-#endif
-			m_scanner.stop();
-			m_timer.cancel();
 		}
 
 
@@ -106,17 +75,17 @@ namespace hbm {
 			m_scanner.start();
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute_for(timeOfExecution);
+		}
 
+		void Receiver::stop()
+		{
+			m_eventloop.stop();
 #ifndef _WIN32
 			m_netlink.stop();
 #endif
 			m_scanner.stop();
 			m_timer.cancel();
-		}
 
-		void Receiver::stop()
-		{
-			m_scanner.stop();
 		}
 	}
 }

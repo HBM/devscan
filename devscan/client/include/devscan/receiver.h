@@ -68,7 +68,7 @@ namespace hbm {
 
 			ssize_t netLinkEventHandler();
 #endif
-			ssize_t receiveEventHandler();
+			ssize_t receiveEventHandler(communication::MulticastServer *pMcs);
 			ssize_t retireEventHandler();
 		};
 	}
