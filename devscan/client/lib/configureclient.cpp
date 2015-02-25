@@ -11,8 +11,10 @@
 #include <json/reader.h>
 #include <json/writer.h>
 
+#include "hbm/communication/multicastserver.h"
 #include "hbm/communication/netadapter.h"
 #include "hbm/jsonrpc/jsonrpc_defines.h"
+#include "hbm/sys/eventloop.h"
 
 #include "configureclient.h"
 #include "defines.h"
@@ -22,9 +24,9 @@ namespace hbm {
 		const std::chrono::milliseconds ConfigureClient::TIMETOWAITFORANSWERS(3000);
 
 		ConfigureClient::ConfigureClient()
-			: m_MulticastServer(CONFIG_IPV4_ADDRESS, CONFIG_UDP_PORT, m_netadapterList)
+			: m_MulticastServer(m_netadapterList, m_eventloop)
 		{
-			m_MulticastServer.start();
+			m_MulticastServer.start(CONFIG_IPV4_ADDRESS, CONFIG_UDP_PORT, std::bind(&ConfigureClient::recvCb, this, std::placeholders::_1));
 			m_MulticastServer.addAllInterfaces();
 
 			srand (static_cast < unsigned int > (time(NULL)));
@@ -35,7 +37,7 @@ namespace hbm {
 			m_MulticastServer.stop();
 		}
 
-		std::string ConfigureClient::executeRequest(const std::string& interfaceIp, unsigned char ttl, const std::string& id, const std::string& Message)
+		std::string ConfigureClient::executeRequest(const std::string& interfaceIp, unsigned char ttl, const std::string& Message)
 		{
 			m_netadapterList.update();
 
@@ -46,39 +48,34 @@ namespace hbm {
 				m_MulticastServer.sendOverInterfaceByAddress(interfaceIp, Message, ttl);
 			}
 
+			m_eventloop.execute_for(TIMETOWAITFORANSWERS);
+			return m_response;
+		}
 
-			// collect answer(s) here
-			ssize_t nbytes;
-			const size_t BUFFERSIZE = 65536;
-			char readBuffer[BUFFERSIZE];
+		int ConfigureClient::recvCb(communication::MulticastServer* mcs)
+		{
+			ssize_t result;
+			char buf[65536];
 			int adapterIndex;
+			int ttl;
+			result = mcs->receiveTelegram(buf, sizeof(buf), adapterIndex, ttl);
+			if (result>0) {
+				Json::Value telegramNode;
 
-			std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now() + TIMETOWAITFORANSWERS;
+				/// \throw std::runtime_error in case of a parse error
+				if(Json::Reader().parse(buf, buf+result, telegramNode)) {
+					if(telegramNode.isMember(hbm::jsonrpc::RESULT) || telegramNode.isMember(hbm::jsonrpc::ERR)) {
+						// this is a result or an error!
 
-			do {
-				std::chrono::milliseconds timediff = std::chrono::duration_cast < std::chrono::milliseconds > (endTime - std::chrono::steady_clock::now());
-
-				// receive responses until timeout or error.
-				nbytes = m_MulticastServer.receiveTelegramBlocking(readBuffer, sizeof(readBuffer), adapterIndex, timediff);
-				if (nbytes > 0) {
-					Json::Value telegramNode;
-
-					/// \throw std::runtime_error in case of a parse error
-					if(Json::Reader().parse(readBuffer, readBuffer+nbytes, telegramNode)) {
-						if(telegramNode.isMember(hbm::jsonrpc::RESULT) || telegramNode.isMember(hbm::jsonrpc::ERR)) {
-							// this is a result or an error!
-
-							// is this a response to our question ( id does match)?
-							if (id == telegramNode[hbm::jsonrpc::ID].asString()) {
-								return std::string(readBuffer, nbytes);
-							}
+						// is this a response to our question ( id does match)?
+						if (m_id == telegramNode[hbm::jsonrpc::ID].asString()) {
+							m_response = std::string(buf, result);
+							m_eventloop.stop();
 						}
 					}
 				}
-			} while (nbytes > 0);
-
-			// no response received in time!
-			return "";
+			}
+			return result;
 		}
 
 		std::string ConfigureClient::setInterfaceConfigurationMethod(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& Uuid, const std::string& InterfaceName, const std::string& method)
@@ -103,7 +100,7 @@ namespace hbm {
 			Json::Value tree;
 			Json::FastWriter writer;
 			writer.omitEndingLineFeed();
-			std::string id(createId());
+			m_id = createId();
 
 			/// \throw std::runtime_error if tree.type != NULL
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
@@ -112,9 +109,9 @@ namespace hbm {
 			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][CONFIGURATION_METHOD] = method;
 			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
 			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-			tree[hbm::jsonrpc::ID] = id;
+			tree[hbm::jsonrpc::ID] = m_id;
 
-			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
+			return executeRequest(outgoingInterfaceIp, ttl, writer.write(tree));
 		}
 
 
@@ -123,7 +120,7 @@ namespace hbm {
 			Json::Value tree;
 			Json::FastWriter writer;
 			writer.omitEndingLineFeed();
-			std::string id(createId());
+			m_id = createId();
 
 			/// \throw std::runtime_error if tree.type != NULL
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
@@ -134,9 +131,9 @@ namespace hbm {
 			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = manualNetmask;
 			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
 			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-			tree[hbm::jsonrpc::ID] = id;
+			tree[hbm::jsonrpc::ID] = m_id;
 
-			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
+			return executeRequest(outgoingInterfaceIp, ttl, writer.write(tree));
 		}
 
 		std::string ConfigureClient::setDefaultGateway(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& uuid, const std::string& ipv4DefaultGateWay)
@@ -162,7 +159,7 @@ namespace hbm {
 			Json::Value tree;
 			Json::FastWriter writer;
 			writer.omitEndingLineFeed();
-			std::string id(createId());
+			m_id = createId();
 
 			/// \throw std::runtime_error if tree.type != NULL
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
@@ -170,9 +167,9 @@ namespace hbm {
 			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_DefaultGateway][TAG_ipV4Address] = ipv4DefaultGateWay;
 			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
 			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-			tree[hbm::jsonrpc::ID] = id;
+			tree[hbm::jsonrpc::ID] = m_id;
 
-			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
+			return executeRequest(outgoingInterfaceIp, ttl, writer.write(tree));
 		}
 
 		std::string ConfigureClient::setInterfaceManualConfiguration(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& Uuid, const std::string& InterfaceName, const std::string& address, const std::string& netmask)
@@ -203,7 +200,7 @@ namespace hbm {
 			Json::Value tree;
 			Json::FastWriter writer;
 			writer.omitEndingLineFeed();
-			std::string id(createId());
+			m_id = createId();
 
 			/// \throw std::runtime_error if tree.type != NULL
 			tree[hbm::jsonrpc::JSONRPC] = "2.0";
@@ -213,9 +210,9 @@ namespace hbm {
 			tree[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][TAG_manualNetmask] = netmask;
 			tree[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = Uuid;
 			tree[hbm::jsonrpc::PARAMS][TAG_Ttl] = static_cast < int >(ttl);
-			tree[hbm::jsonrpc::ID] = id;
+			tree[hbm::jsonrpc::ID] = m_id;
 
-			return executeRequest(outgoingInterfaceIp, ttl, id, writer.write(tree));
+			return executeRequest(outgoingInterfaceIp, ttl, writer.write(tree));
 		}
 
 		std::string ConfigureClient::createId() const

@@ -19,100 +19,105 @@
 
 
 #include "hbm/communication/socketnonblocking.h"
+#include "hbm/communication/tcpacceptor.h"
+#include "hbm/communication/test/socketnonblocking_test.h"
+#include "hbm/sys/eventloop.h"
+
+namespace hbm {
+	namespace communication {
+		namespace test {
+
+			static const unsigned int PORT = 22222;
 
 
-static const unsigned int PORT = 22222;
-static const char STP[] = "STP";
-
-
-static void echo()
-{
-	char buffer[1024];
-	ssize_t result;
-	size_t len;
-	hbm::communication::SocketNonblocking listeningFd;
-	listeningFd.bind(PORT);
-	do {
-		listeningFd.listenToClient();
-		std::unique_ptr < hbm::communication::SocketNonblocking > receiver = listeningFd.acceptClient();
-
-		do {
-			memset(buffer, 0, sizeof(buffer));
-			result = receiver->receive(buffer, sizeof(buffer));
-			if (result<=0) {
-				break;
+			serverFixture::serverFixture()
+				: m_acceptor(m_eventloop)
+			{
+				BOOST_TEST_MESSAGE("setup Fixture1");
+				int result = m_acceptor.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1), std::bind(&serverFixture::serverEcho, this, std::placeholders::_1));
+				BOOST_CHECK_NE(result, -1);
+				m_server = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(m_eventloop)));
 			}
 
-			if (strcmp(buffer,STP)==0) {
-				// finished!
-				return;
+			serverFixture::~serverFixture()
+			{
+				BOOST_TEST_MESSAGE("teardown Fixture1");
+				m_eventloop.stop();
+				m_server.join();
 			}
 
-			len = result;
-			result = receiver->sendBlock(buffer, len, false);
-			if (result!=static_cast < ssize_t > (len)) {
-				break;
+
+			void serverFixture::acceptCb(TcpAcceptor::workerSocket_t worker)
+			{
+				m_workers.insert(std::move(worker));
 			}
 
-		} while (true);
-	} while (true);
-}
+			int serverFixture::serverEcho(hbm::communication::SocketNonblocking* pSocket)
+			{
+				char buffer[1024];
+				ssize_t result;
 
-static void receiver(hbm::communication::SocketNonblocking* pSocket)
-{
-	char buffer[1024];
-	ssize_t result;
+				do {
+					result = pSocket->receive(buffer, sizeof(buffer));
+					if (result>0) {
+						result = pSocket->sendBlock(buffer, result, false);
+					}
+				} while (result>0);
+				return result;
+			}
 
-	do {
-		result = pSocket->receive(buffer, sizeof(buffer));
-	} while (result>0);
-}
 
-BOOST_AUTO_TEST_CASE(stop_receiver_test)
-{
-	static const unsigned int CYCLECOUNT = 1000;
 
-	std::thread echoThread(&echo);
-	hbm::communication::SocketNonblocking receiverSocket;
-	hbm::communication::SocketNonblocking caller;
+			int serverFixture::clientReceive(hbm::communication::SocketNonblocking* pSocket)
+			{
+				char buffer[1024];
+				ssize_t result;
 
-	for (unsigned int i=0; i<CYCLECOUNT; ++i) {
-		receiverSocket.connect("127.0.0.1", std::to_string(PORT));
-		std::thread receiverThread(std::bind(&receiver, &receiverSocket));
-		receiverSocket.stop();
+				result = pSocket->receive(buffer, sizeof(buffer));
+				if (result>0) {
+					m_answer += buffer;
+				}
 
-		receiverThread.join();
+				return result;
+			}
+
+
+			BOOST_FIXTURE_TEST_SUITE( socket_test, serverFixture )
+
+
+			BOOST_AUTO_TEST_CASE(echo_test)
+			{
+				int result;
+				const char msg[] = "hallo!";
+				char answer[1024];
+
+				hbm::sys::EventLoop eventloop;
+				std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop)));
+
+				hbm::communication::SocketNonblocking client(eventloop);
+				result = client.connect("127.0.0.1", std::to_string(PORT), std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
+
+				cleaAnswer();
+				result = client.sendBlock(msg, sizeof(msg), false);
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				BOOST_CHECK_EQUAL(result, sizeof(msg));
+				client.disconnect();
+
+				BOOST_CHECK_EQUAL(getAnswer(), msg);
+
+
+				eventloop.stop();
+				worker.join();
+			}
+
+
+			BOOST_AUTO_TEST_SUITE_END()
+		}
 	}
-
-	caller.connect("127.0.0.1", std::to_string(PORT));
-	caller.sendBlock(STP, strlen(STP), false);
-	caller.stop();
-	echoThread.join();
 }
 
-BOOST_AUTO_TEST_CASE(start_send_stop_test)
-{
-	static const unsigned int CYCLECOUNT = 1000;
 
-	static const std::string MSG = "testest";
-	char buffer[1024];
 
-	std::thread echoThread(&echo);
 
-	hbm::communication::SocketNonblocking caller;
-
-	for (unsigned int i=0; i<CYCLECOUNT; ++i) {
-		memset(buffer, 0, sizeof(buffer));
-		caller.connect("127.0.0.1", std::to_string(PORT));
-		caller.sendBlock(MSG.c_str(), MSG.length(), false);
-		ssize_t result = caller.receiveComplete(buffer, MSG.length());
-		BOOST_CHECK(MSG==std::string(buffer, static_cast < size_t > (result)));
-		caller.stop();
-	}
-	caller.connect("127.0.0.1", std::to_string(PORT));
-	caller.sendBlock(STP, strlen(STP), false);
-	caller.stop();
-	echoThread.join();
-}
 
 

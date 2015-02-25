@@ -15,6 +15,7 @@
 #ifndef _WIN32
 #include "hbm/communication/netlink.h"
 #endif
+#include "hbm/sys/eventloop.h"
 #include "hbm/sys/timer.h"
 
 
@@ -56,6 +57,7 @@ namespace hbm {
 			virtual void stop();
 
 		private:
+			sys::EventLoop m_eventloop;
 			communication::NetadapterList m_netadapterList;
 			communication::MulticastServer m_scanner;
 			sys::Timer m_timer;
@@ -66,7 +68,7 @@ namespace hbm {
 
 			ssize_t netLinkEventHandler();
 #endif
-			ssize_t receiveEventHandler();
+			ssize_t receiveEventHandler(communication::MulticastServer *pMcs);
 			ssize_t retireEventHandler();
 		};
 	}

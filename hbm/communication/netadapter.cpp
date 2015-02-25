@@ -111,17 +111,18 @@ namespace hbm {
 
 			// check for some reserved ranges
 			uint8_t upperMost = bigAddress >> 24;
-			if (upperMost==127) {
+			if (upperMost==0){
+				// includes 0.0.0.0
+				return false;
+			} else if ((upperMost==24)||(upperMost==25)||(upperMost==26)) {
+				// reserved for quantumx internal firewire communcation
+				return false;
+			} else if (upperMost==127) {
 				// Loopback and diagnostics
 				return false;
 			} else if (upperMost>=224) {
 				// 224 - 239: Reserved for Multicasting
 				// 240 - 254: Experimental; used for research
-				return false;
-			}
-
-			if (bigAddress==0) {
-				// 0.0.0.0
 				return false;
 			}
 

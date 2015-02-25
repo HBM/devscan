@@ -9,17 +9,22 @@
 #include <WinSock2.h>
 
 #include "hbm/sys/notifier.h"
+#include "hbm/sys/eventloop.h"
 
 namespace hbm {
 	namespace sys {
-		Notifier::Notifier()
+		Notifier::Notifier(EventLoop& eventLoop, EventHandler_t eventHandler)
 			: m_fd(NULL)
+			, m_eventLoop(eventLoop)
+			, m_eventHandler(eventHandler)
 		{
 			m_fd = CreateEvent(NULL, false, false, NULL);
+			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
 		}
 
 		Notifier::~Notifier()
 		{
+			m_eventLoop.eraseEvent(m_fd);
 			CloseHandle(m_fd);
 		}
 
@@ -31,6 +36,16 @@ namespace hbm {
 			return 0;
 		}
 
+		int Notifier::process()
+		{
+			int result = read();
+			if (result > 0) {
+				if (m_eventHandler) {
+					m_eventHandler();
+				}
+			}
+			return result;
+		}
 
 		int Notifier::read()
 		{
@@ -47,31 +62,6 @@ namespace hbm {
 				break;
 			}
 			return 0;
-		}
-
-		int Notifier::wait()
-		{
-			return wait_for(INFINITE);
-		}
-
-
-		int Notifier::wait_for(int period_ms)
-		{
-			DWORD result = WaitForSingleObject(m_fd, period_ms);
-			switch (result) {
-			case WAIT_OBJECT_0:
-				return 1;
-				break;
-			default:
-				return -1;
-				break;
-			}
-			return 0;
-		}
-
-		event Notifier::getFd() const
-		{
-			return m_fd;
 		}
 	}
 }

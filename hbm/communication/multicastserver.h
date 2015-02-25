@@ -22,6 +22,8 @@
 #include "netadapter.h"
 #include "netadapterlist.h"
 
+#include "hbm/sys/eventloop.h"
+
 #ifdef _WIN32
 #ifndef ssize_t
 typedef int ssize_t;
@@ -43,8 +45,10 @@ namespace hbm {
 		class MulticastServer
 		{
 		public:
+			typedef std::function < int (MulticastServer* mcs) > DataHandler_t;
+
 			/// @param address the multicast group
-			MulticastServer(const std::string& address, unsigned int port, const NetadapterList& netadapterList);
+			MulticastServer(NetadapterList& netadapterList, sys::EventLoop &eventLoop);
 
 			virtual ~MulticastServer();
 
@@ -58,7 +62,7 @@ namespace hbm {
 			/// all interfaces known to the internal netadapter list are dropped as receiving interfaces.
 			void dropAllInterfaces();
 
-			int start();
+			int start(const std::string& address, unsigned int port, DataHandler_t dataHandler);
 
 			void stop();
 
@@ -79,30 +83,12 @@ namespace hbm {
 			/// @param interfaceIp IP address of the interface to use
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const std::string& data, unsigned int ttl=1) const;
 			int sendOverInterfaceByAddress(const std::string& interfaceIp, const void* pData, size_t length, unsigned int ttl=1) const;
-			
-			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex);
-
-			/// @param[in,out] waitTime maximum time to wait.
-			ssize_t receiveTelegramBlocking(void* msgbuf, size_t len, int& adapterIndex, std::chrono::milliseconds timeout);
 
 			ssize_t receiveTelegram(void* msgbuf, size_t len, Netadapter& adapter, int &ttl);
+			ssize_t receiveTelegram(void* msgbuf, size_t len, std::string& adapterName, int& ttl);
 
 			/// @param[out] ttl ttl in the ip header (the value set by the last sender(router))
 			ssize_t receiveTelegram(void* msgbuf, size_t len, int& adapterIndex, int &ttl);
-
-			/// poll this to get informed about received messages
-	#ifdef _WIN32
-			WSAEVENT getFd() const
-			{
-				return m_event;
-			}
-	#else
-			int getFd() const
-			{
-				return m_ReceiveSocket;
-			}
-	#endif
-
 		private:
 
 			MulticastServer(const MulticastServer&);
@@ -115,10 +101,13 @@ namespace hbm {
 
 			int dropOrAddInterface(const std::string& interfaceAddress, bool add);
 
-			/// The All Hosts multicast group addresses all hosts on the same network segment.
-			const std::string m_address;
+			/// called by eventloop
+			int process();
 
-			const unsigned int m_port;
+			/// The All Hosts multicast group addresses all hosts on the same network segment.
+			std::string m_address;
+
+			unsigned int m_port;
 
 			static const SOCKET NO_SOCKET = static_cast<SOCKET>(-1);
 
@@ -131,6 +120,9 @@ namespace hbm {
 			struct sockaddr_in m_receiveAddr;
 
 			const NetadapterList& m_netadapterList;
+
+			sys::EventLoop& m_eventLoop;
+			DataHandler_t m_dataHandler;
 		};
 	}
 }

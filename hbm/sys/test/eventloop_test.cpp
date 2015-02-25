@@ -31,12 +31,9 @@ static ssize_t eventHandlerPrint()
 
 
 /// by returning error, the execute() method, that is doing the eventloop, exits
-static ssize_t eventHandlerIncrement(unsigned int* pValue, hbm::sys::Timer* pTimer)
+static ssize_t eventHandlerIncrement(unsigned int* pValue)
 {
-	// under Linux read sets the timer to not-signaled!
-	pTimer->read();
 	++(*pValue);
-
 	return 0;
 }
 
@@ -50,7 +47,7 @@ BOOST_AUTO_TEST_CASE(stop_test)
 	static const std::chrono::milliseconds waitDuration(300);
 
 	std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, &eventLoop));
+	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventLoop)));
 	std::this_thread::sleep_for(waitDuration);
 	eventLoop.stop();
 	worker.join();
@@ -78,29 +75,48 @@ BOOST_AUTO_TEST_CASE(waitforend_test)
 	BOOST_CHECK_GE(delta.count(), duration.count()-3);
 }
 
+BOOST_AUTO_TEST_CASE(restart_test)
+{
+	hbm::sys::EventLoop eventLoop;
+
+	static const std::chrono::milliseconds duration(100);
+
+	for (unsigned int i=0; i<10; ++i) {
+		std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
+		int result = eventLoop.execute_for(duration);
+		std::chrono::steady_clock::time_point endTime = std::chrono::steady_clock::now();
+		std::chrono::milliseconds delta = std::chrono::duration_cast < std::chrono::milliseconds > (endTime-startTime);
+
+		BOOST_CHECK_EQUAL(result, 0);
+		BOOST_CHECK_GE(delta.count(), duration.count()-3);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(notify_test)
 {
+	unsigned int value = 0;
 	int result;
 	static const std::chrono::milliseconds duration(100);
 	hbm::sys::EventLoop eventLoop;
-	hbm::sys::Notifier notifier;
-	result = notifier.wait_for(0);
-	BOOST_CHECK_EQUAL(result, -1);
-	result = notifier.read();
-	BOOST_CHECK_EQUAL(result, 0);
+	hbm::sys::Notifier notifier(eventLoop);
+	notifier.set(std::bind(&eventHandlerIncrement, &value));
+	BOOST_CHECK_EQUAL(value, 0);
+
+	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, &eventLoop));
 
 
-	notifier.notify();
-	result = notifier.wait_for(0);
-	BOOST_CHECK_EQUAL(result, 1);
-	result = notifier.wait_for(0);
-	BOOST_CHECK_EQUAL(result, -1);
+	static const unsigned int count = 10;
+	for(unsigned int i=0; i<count; ++i) {
+		notifier.notify();
+	}
 
-	notifier.notify();
-	result = notifier.read();
-	BOOST_CHECK_EQUAL(result, 1);
-	result = notifier.read();
-	BOOST_CHECK_EQUAL(result, 0);
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	eventLoop.stop();
+	worker.join();
+
+	BOOST_CHECK_EQUAL(value, count);
+
 }
 
 BOOST_AUTO_TEST_CASE(oneshottimer_test)
@@ -112,8 +128,8 @@ BOOST_AUTO_TEST_CASE(oneshottimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer singleshotTimer(timerCycle, false);
-	eventLoop.addEvent(singleshotTimer.getFd(), std::bind(&eventHandlerIncrement, &counter, &singleshotTimer));
+	hbm::sys::Timer timer(eventLoop);
+	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_EQUAL(counter, 1);
@@ -130,8 +146,8 @@ BOOST_AUTO_TEST_CASE(cyclictimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer singleshotTimer(timerCycle, true);
-	eventLoop.addEvent(singleshotTimer.getFd(), std::bind(&eventHandlerIncrement, &counter, &singleshotTimer));
+	hbm::sys::Timer cyclicTimer(eventLoop);
+	cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_GE(counter, excpectedMinimum);
@@ -147,18 +163,18 @@ BOOST_AUTO_TEST_CASE(canceltimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer singleshotTimer(timerCycle, false);
-	eventLoop.addEvent(singleshotTimer.getFd(), std::bind(&eventHandlerIncrement, &counter, &singleshotTimer));
+	hbm::sys::Timer timer(eventLoop);
+	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
 
-	singleshotTimer.cancel();
+	timer.cancel();
 
 	worker.join();
 
 	BOOST_CHECK_EQUAL(counter, 0);
 }
 
-BOOST_AUTO_TEST_CASE(removefromeventloop_test)
+BOOST_AUTO_TEST_CASE(removenotifier_test)
 {
 	static const unsigned int timerCycle = 100;
 	static const unsigned int timerCount = 10;
@@ -166,50 +182,16 @@ BOOST_AUTO_TEST_CASE(removefromeventloop_test)
 	hbm::sys::EventLoop eventLoop;
 
 	unsigned int counter = 0;
-
-	hbm::sys::Timer singleshotTimer(timerCycle, false);
-	eventLoop.addEvent(singleshotTimer.getFd(), std::bind(&eventHandlerIncrement, &counter, &singleshotTimer));
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
-	eventLoop.eraseEvent(singleshotTimer.getFd());
-	int result = singleshotTimer.wait_for(duration.count());
-	BOOST_CHECK_EQUAL(result, 1);
+
+	{
+		// leaving this scope leads to destruction of the timer and the removal from the event loop
+		hbm::sys::Timer cyclicTimer(eventLoop);
+		cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
+		std::this_thread::sleep_for(std::chrono::milliseconds(timerCycle * timerCount / 2));
+	}
+
 	worker.join();
 
-	BOOST_CHECK_EQUAL(counter, 0);
-}
-
-
-BOOST_AUTO_TEST_CASE(severaltimers_test)
-{
-	static const unsigned int timerCycle = 10;
-	static const unsigned int timerCount = 10;
-	static const std::chrono::milliseconds duration(timerCycle * timerCount);
-	hbm::sys::EventLoop eventLoop;
-
-	unsigned int counter = 0;
-
-	typedef std::vector < hbm::sys::Timer > timers_t;
-	timers_t timers(10);
-
-	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-		hbm::sys::Timer& timer = *iter;
-		timer.set(timerCycle, false);
-		eventLoop.addEvent(timer.getFd(), std::bind(&eventHandlerIncrement, &counter ,&timer));
-	}
-
-	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-		hbm::sys::Timer& timer = *iter;
-		timer.set(timerCycle, false);
-		eventLoop.eraseEvent(timer.getFd());
-	}
-
-	for (timers_t::iterator iter = timers.begin(); iter != timers.end(); ++iter) {
-		hbm::sys::Timer& timer = *iter;
-		timer.set(timerCycle, false);
-		eventLoop.addEvent(timer.getFd(), std::bind(&eventHandlerIncrement, &counter ,&timer));
-	}
-
-	int result = eventLoop.execute_for(duration);
-	BOOST_CHECK_EQUAL(counter, timers.size());
-	BOOST_CHECK(result == 0);
+	BOOST_CHECK_LT(counter, timerCount);
 }

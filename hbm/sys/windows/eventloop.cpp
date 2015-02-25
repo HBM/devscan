@@ -21,21 +21,21 @@ namespace hbm {
 	namespace sys {
 		/// \throws hbm::exception
 		EventLoop::EventLoop()
-			: m_changeNotifier()
-			, m_stopNotifier()
+			: m_changeFd(CreateEvent(NULL, false, false, NULL))
+			, m_stopFd(CreateEvent(NULL, false, false, NULL))
 		{
 			eventInfo_t stopEvent;
-			stopEvent.fd = m_stopNotifier.getFd();
+			stopEvent.fd = m_stopFd;
 			stopEvent.eventHandler = nullptr;
 
-			m_changeEvent.fd = m_changeNotifier.getFd();
+			m_changeEvent.fd = m_changeFd;
 			m_changeEvent.eventHandler = std::bind(&EventLoop::changeHandler, this);;
 
-			m_eventInfos[stopEvent.fd] = stopEvent;
-			m_eventInfos[m_changeEvent.fd] = m_changeEvent;
+			m_eventInfos[m_stopFd] = stopEvent;
+			m_eventInfos[m_changeFd] = m_changeEvent;
 
-			m_handles.push_back(stopEvent.fd);
-			m_handles.push_back(m_changeEvent.fd);
+			m_handles.push_back(m_stopFd);
+			m_handles.push_back(m_changeFd);
 		}
 
 		EventLoop::~EventLoop()
@@ -69,7 +69,7 @@ namespace hbm {
 		}
 
 
-		void EventLoop::addEvent(event fd, eventHandler_t eventHandler)
+		void EventLoop::addEvent(event fd, EventHandler_t eventHandler)
 		{
 			if (!eventHandler) {
 				return;
@@ -82,19 +82,19 @@ namespace hbm {
 				std::lock_guard < std::mutex> lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 			}
-			m_changeNotifier.notify();
+			SetEvent(m_changeFd);
 		}
 
 		void EventLoop::eraseEvent(event fd)
 		{
 			eventInfo_t evi;
 			evi.fd = fd;
-			evi.eventHandler = eventHandler_t();
+			evi.eventHandler = EventHandler_t();
 			{
 				std::lock_guard < std::mutex> lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 			}
-			m_changeNotifier.notify();
+			SetEvent(m_changeFd);
 		}
 
 		int EventLoop::execute()
@@ -158,7 +158,7 @@ namespace hbm {
 						return nbytes;
 					}
 				} while (nbytes >= 0);
-			} while (evi.fd == m_changeNotifier.getFd()); // in case of change we start all over again!
+			} while (evi.fd == m_changeFd); // in case of change we start all over again!
 
 
 			return 0;
@@ -166,7 +166,7 @@ namespace hbm {
 
 		void EventLoop::stop()
 		{
-			m_stopNotifier.notify();
+			SetEvent(m_stopFd);
 		}
 	}
 }

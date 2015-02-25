@@ -9,7 +9,6 @@
 
 
 
-#include "hbm/communication/netadapter.h"
 #include "hbm/sys/eventloop.h"
 
 #include "receiver.h"
@@ -22,55 +21,27 @@ namespace hbm {
 
 		Receiver::Receiver()
 			: m_netadapterList()
-			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList)
-			, m_timer(1000)
+			, m_scanner(m_netadapterList, m_eventloop)
+			, m_timer(m_eventloop)
 #ifndef _WIN32
-			, m_netlink()
+			, m_netlink(m_netadapterList, m_scanner, m_eventloop)
 #endif
 		{
 		}
 
-#ifndef _WIN32
-		ssize_t Receiver::netLinkEventHandler()
-		{
-			return m_netlink.receiveAndProcess(m_netadapterList, m_scanner);
-		}
-#endif
-
-		ssize_t Receiver::receiveEventHandler()
+		ssize_t Receiver::receiveEventHandler(communication::MulticastServer* pMcs)
 		{
 			// receive announcement
 			char readBuffer[communication::MAX_DATAGRAM_SIZE];
 			int ttl;
-			int adapterIndex;
-			ssize_t nBytes = m_scanner.receiveTelegram(readBuffer, sizeof(readBuffer), adapterIndex, ttl);
+			std::string adapterName;
+			ssize_t nBytes = pMcs->receiveTelegram(readBuffer, sizeof(readBuffer), adapterName, ttl);
 //			std::cerr << "Receiver::receiveEventHandler len=" << nBytes << ": \"" << readBuffer << "\"" << std::endl;
 			if(nBytes > 0) {
-				std::string interfaceName = "Err";
-				try {
-					// getAdapterByInterfaceIndex may throw an exception, i.e. it does on 0
-					communication::Netadapter adapter = communication::NetadapterList().getAdapterByInterfaceIndex(adapterIndex);
-					interfaceName = adapter.getName();
-				}
-				catch(...) {
-					interfaceName = "Undef";
-					interfaceName.append(std::to_string(adapterIndex));
-				}
-				m_deviceMonitor.processReceivedAnnouncement(interfaceName, std::string(readBuffer, nBytes));
+				m_deviceMonitor.processReceivedAnnouncement(adapterName, std::string(readBuffer, nBytes));
 			}
 			return nBytes;
 		}
-
-		ssize_t Receiver::retireEventHandler()
-		{
-			int result = m_timer.read();
-			if (result>0) {
-				m_deviceMonitor.checkForExpiredAnnouncements();
-			}
-
-			return result;
-		}
-
 
 		void Receiver::setAnnounceCb(announceCb_t cb)
 		{
@@ -92,50 +63,30 @@ namespace hbm {
 
 		void Receiver::start()
 		{
-			sys::EventLoop evl;
-
-			m_scanner.start();
-			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-#ifndef _WIN32
-			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-#endif
-			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
-
+			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
 			m_scanner.addAllInterfaces();
-			evl.execute();
-
-#ifndef _WIN32
-			m_netlink.stop();
-#endif
-			m_scanner.stop();
-			m_timer.cancel();
+			m_eventloop.execute();
 		}
 
 
 		void Receiver::start_for(std::chrono::milliseconds timeOfExecution)
 		{
-			sys::EventLoop evl;
-
-			m_scanner.start();
-			evl.addEvent(m_timer.getFd(), std::bind(&Receiver::retireEventHandler, this));
-#ifndef _WIN32
-			evl.addEvent(m_netlink.getFd(), std::bind(&Receiver::netLinkEventHandler, this));
-#endif
-			evl.addEvent(m_scanner.getFd(), std::bind(&Receiver::receiveEventHandler, this));
-
+			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
 			m_scanner.addAllInterfaces();
-			evl.execute_for(timeOfExecution);
+			m_eventloop.execute_for(timeOfExecution);
+		}
 
+		void Receiver::stop()
+		{
+			m_eventloop.stop();
 #ifndef _WIN32
 			m_netlink.stop();
 #endif
 			m_scanner.stop();
 			m_timer.cancel();
-		}
 
-		void Receiver::stop()
-		{
-			m_scanner.stop();
 		}
 	}
 }

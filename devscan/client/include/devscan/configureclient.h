@@ -10,7 +10,7 @@
 
 #include "hbm/communication/multicastserver.h"
 #include "hbm/communication/netadapterlist.h"
-
+#include "hbm/sys/eventloop.h"
 namespace hbm {
 	namespace devscan {
 		/// this class sends HBM scan network configuration requests, and waits for the response.
@@ -82,7 +82,7 @@ namespace hbm {
 			/// \param message  complete JSOM-message to send, as a plain string
 			/// \return empty string if no answer was received. Otherwise JSON rpc response from device.
 			/// \throws std::runtime_error
-			std::string executeRequest(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& id, const std::string& message);
+			std::string executeRequest(const std::string& outgoingInterfaceIp, unsigned char ttl, const std::string& message);
 
 		private:
 			/// Each json rpc request carries an id. The response to each request will carry the id of the request.
@@ -90,8 +90,14 @@ namespace hbm {
 			/// The id created herein is a bit more noisy in order recognize the correct response.
 			std::string createId() const;
 
+			int recvCb(communication::MulticastServer* mcs);
+
+			sys::EventLoop m_eventloop;
 			communication::NetadapterList m_netadapterList;
 			communication::MulticastServer m_MulticastServer;
+
+			std::string m_id;
+			std::string m_response;
 
 			static const std::chrono::milliseconds TIMETOWAITFORANSWERS;
 		};

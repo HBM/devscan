@@ -28,25 +28,31 @@ namespace hbm {
 			pTimer->cancel();
 		}
 
-		Timer::Timer()
+		Timer::Timer(EventLoop& eventLoop, EventHandler_t eventHandler)
 			: m_fd(NULL)
+			, m_eventLoop(eventLoop)
+			, m_eventHandler(eventHandler)
 			, m_isRunning(false)
 		{
 			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
 			cancel();
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 		}
 
-		Timer::Timer(unsigned int period_ms, bool repeated)
+		Timer::Timer(unsigned int period_ms, bool repeated, EventLoop& eventLoop, EventHandler_t eventHandler)
 			: m_fd(NULL)
+			, m_eventLoop(eventLoop)
+			, m_eventHandler(eventHandler)
 			, m_isRunning(false)
 		{
 			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
-
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 			set(period_ms, repeated);
 		}
 
 		Timer::~Timer()
 		{
+			m_eventLoop.eraseEvent(m_fd);
 			CloseHandle(m_fd);
 		}
 
@@ -75,6 +81,17 @@ namespace hbm {
 			return 0;
 		}
 
+		int Timer::process()
+		{
+			int result = read();
+			if (result > 0) {
+				if (m_eventHandler) {
+					m_eventHandler();
+				}
+			}
+			return result;
+		}
+
 		int Timer::read()
 		{
 			DWORD result = WaitForSingleObject(m_fd, 0);
@@ -84,26 +101,6 @@ namespace hbm {
 				break;
 			case WAIT_TIMEOUT:
 				return 0;
-				break;
-			default:
-				return -1;
-				break;
-			}
-			return 0;
-		}
-
-		int Timer::wait()
-		{
-			return wait_for(INFINITE);
-		}
-
-
-		int Timer::wait_for(int period_ms)
-		{
-			DWORD result = WaitForSingleObject(m_fd, period_ms);
-			switch (result) {
-			case WAIT_OBJECT_0:
-				return 1;
 				break;
 			default:
 				return -1;
@@ -131,11 +128,6 @@ namespace hbm {
 				FALSE
 				);
 			return result;
-		}
-
-		event Timer::getFd() const
-		{
-			return m_fd;
 		}
 	}
 }

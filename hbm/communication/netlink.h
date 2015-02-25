@@ -8,31 +8,33 @@
 #include "hbm/exception/exception.hpp"
 #include "hbm/communication/netadapterlist.h"
 #include "hbm/communication/multicastserver.h"
+#include "hbm/sys/defines.h"
+#include "hbm/sys/eventloop.h"
 
 namespace hbm {
 	class Netlink {
 	public:
 		/// \throws hbm::exception
-		Netlink();
+		Netlink(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs, sys::EventLoop &eventLoop);
 		virtual ~Netlink();
-
-		/// receive events from netlink. Adapt netadapter list and mulicast server accordingly
-		ssize_t receiveAndProcess(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs) const;
-
-		/// to poll
-		int getFd() const
-		{
-			return m_fd;
-		}
 
 		int stop();
 
 	private:
+		ssize_t process() const;
+
 		ssize_t receive(char* pReadBuffer, size_t bufferSize) const;
+
+		/// receive events from netlink. Adapt netadapter list and mulicast server accordingly
 		/// \param[in, out] netadapterlist will be adapted when processing netlink events
 		/// \param[in, out] mcs will be adapted when processing netlink events
-		void process(char *pReadBuffer, size_t bufferSize, communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs) const;
+		void processNetlinkTelegram(char *pReadBuffer, size_t bufferSize) const;
 		int m_fd;
+
+		communication::NetadapterList &m_netadapterlist;
+		communication::MulticastServer &m_mcs;
+
+		sys::EventLoop& m_eventloop;
 	};
 }
 

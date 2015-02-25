@@ -18,11 +18,9 @@
 #include <functional>
 #include <chrono>
 #include <mutex>
-#include <condition_variable>
-#include <mutex>
 
 #include "hbm/exception/exception.hpp"
-#include "hbm/sys/notifier.h"
+#include "hbm/sys/defines.h"
 
 namespace hbm {
 	namespace sys {
@@ -31,7 +29,7 @@ namespace hbm {
 			/// \throws hbm::exception
 			EventLoop();
 			virtual ~EventLoop();
-			void addEvent(event fd, eventHandler_t eventHandler);
+			void addEvent(event fd, EventHandler_t eventHandler);
 
 			void eraseEvent(event fd);
 
@@ -44,7 +42,7 @@ namespace hbm {
 		private:
 			struct eventInfo_t {
 				event fd;
-				eventHandler_t eventHandler;
+				EventHandler_t eventHandler;
 			};
 
 			/// fd is the key
@@ -58,9 +56,8 @@ namespace hbm {
 #else
 			int m_epollfd;
 #endif
-
-			Notifier m_changeNotifier;
-			Notifier m_stopNotifier;
+			event m_changeFd;
+			event m_stopFd;
 
 			eventInfo_t m_changeEvent;
 
@@ -68,7 +65,7 @@ namespace hbm {
 			changelist_t m_changeList;
 			std::mutex m_changeListMtx;
 
-			/// events handeled by event loop
+			/// events handled by event loop
 			eventInfos_t m_eventInfos;
 		};
 	}

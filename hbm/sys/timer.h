@@ -6,19 +6,10 @@
 #ifndef _HBM__TIMER_H
 #define _HBM__TIMER_H
 
-#ifdef _WIN32
-#include <WinSock2.h>
-#ifndef ssize_t
-#define ssize_t int
-#endif
-typedef HANDLE event;
-#else
-#include <unistd.h>
-typedef int event;
-#endif
-
 
 #include "hbm/exception/exception.hpp"
+#include "hbm/sys/defines.h"
+#include "hbm/sys/eventloop.h"
 
 namespace hbm {
 	namespace sys {
@@ -26,29 +17,14 @@ namespace hbm {
 		class Timer {
 		public:
 			/// \throws hbm::exception
-			Timer();
+			Timer(EventLoop& eventLoop);
 
 			Timer(Timer&& source);
 
-			/// @param period_ms timer interval in ms
-			/// \throws hbm::exception
-			Timer(unsigned int period_ms, bool repeated);
 			~Timer();
 
 			/// @param period_ms timer interval in ms
-			int set(unsigned int period_ms, bool repeated);
-
-			/// \return 0 if timer has not expired yet. 1 if timer has expired
-			int read();
-
-			/// \return 0 if timer was stopped before expiration. 1 if timer has expired
-			int wait();
-
-			/// \return 0 if timer was stopped before expiration. 1 if timer has expired. -1 on time out
-			int wait_for(int period_ms);
-
-			/// to poll
-			event getFd() const;
+			int set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler);
 
 			/// timer will not signal, wait will block.
 			/// \return 1 success, timer was running; 0 success
@@ -60,7 +36,15 @@ namespace hbm {
 			/// must not be assigned
 			Timer operator=(const Timer& op);
 
+			/// called by eventloop
+			int process();
+
+			/// \return 0 if timer has not expired yet. 1 if timer has expired
+			int read();
+
 			event m_fd;
+			EventLoop& m_eventLoop;
+			EventHandler_t m_eventHandler;
 #ifdef _WIN32
 			bool m_isRunning;
 #endif

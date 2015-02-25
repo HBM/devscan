@@ -152,11 +152,6 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 }
 
 
-event hbm::communication::SocketNonblocking::getFd() const
-{
-	return m_event;
-}
-
 int hbm::communication::SocketNonblocking::bind(uint16_t Port)
 {
 	//ipv6 does work for ipv4 too!
@@ -173,47 +168,6 @@ int hbm::communication::SocketNonblocking::bind(uint16_t Port)
 	}
 	retVal = ::bind(m_fd, reinterpret_cast<sockaddr*>(&address), sizeof(address));
 	return retVal;
-}
-
-std::unique_ptr < hbm::communication::SocketNonblocking > hbm::communication::SocketNonblocking::acceptClient()
-{
-	std::unique_ptr < SocketNonblocking > retSocket;
-
-	sockaddr_in SockAddr;
-	// the length of the client's address
-	socklen_t socketAddressLen = sizeof(SockAddr);
-
-	int err;
-
-	fd_set fds;
-
-	FD_ZERO(&fds);
-	FD_SET(m_fd,&fds);
-
-	// wir warten ohne timeout, bis etwas zu lesen ist
-	do {
-		err = select(static_cast < int >(m_fd) + 1, &fds, NULL, NULL, NULL);
-	} while((err==-1)&&(errno==WSAEINTR));
-
-	if(err!=1) {
-		return std::unique_ptr < SocketNonblocking >();		
-	} else if(FD_ISSET(m_fd, &fds)) {
-		// the new socket file descriptor returned by the accept system call
-		SOCKET clientFd;
-
-		clientFd = accept(m_fd, reinterpret_cast<sockaddr*>(&SockAddr), &socketAddressLen);
-		if (clientFd >= 0) {
-			std::unique_ptr < SocketNonblocking > p( new SocketNonblocking(static_cast < int > (clientFd)));
-			p->setSocketOptions();
-			return p;
-		}
-	}
-	return std::unique_ptr < SocketNonblocking >();
-}
-
-int hbm::communication::SocketNonblocking::listenToClient(int numPorts)
-{
-	return listen(m_fd, numPorts);
 }
 
 ssize_t hbm::communication::SocketNonblocking::receive(void* pBlock, size_t size)
@@ -366,4 +320,3 @@ bool hbm::communication::SocketNonblocking::isFirewire() const
 {
 	return false;
 }
-

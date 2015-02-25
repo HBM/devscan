@@ -20,10 +20,12 @@
 #include "hbm/communication/netadapter.h"
 #include "hbm/communication/netadapterlist.h"
 
+#include "hbm/sys/eventloop.h"
+
 static std::string received;
 
 
-static void receiveAndKeep(hbm::communication::MulticastServer* pMcs)
+static int receiveAndKeep(hbm::communication::MulticastServer* pMcs)
 {
 	ssize_t result;
 	do {
@@ -35,14 +37,18 @@ static void receiveAndKeep(hbm::communication::MulticastServer* pMcs)
 			received = std::string(buf, result);
 			std::cout << __FUNCTION__ << " '" << received << "'" <<std::endl;
 		} else if (result==-1) {
+			if(errno==EAGAIN || errno==EWOULDBLOCK) {
+				return 0;
+			}
 			std::cout << __FUNCTION__ <<  " " << std::to_string(errno) << " " << strerror(errno) << std::endl;
 		} else {
 			std::cout << __FUNCTION__ << " empty" << std::endl;
 		}
 	} while(result>=0);
+	return 0;
 }
 
-static void receiveAndDiscard(hbm::communication::MulticastServer* pMcs)
+static int receiveAndDiscard(hbm::communication::MulticastServer* pMcs)
 {
 	ssize_t result;
 	do {
@@ -51,6 +57,7 @@ static void receiveAndDiscard(hbm::communication::MulticastServer* pMcs)
 		int ttl;
 		result = pMcs->receiveTelegram(buf, sizeof(buf), adapterIndex, ttl);
 	} while(result>=0);
+	return 0;
 }
 
 
@@ -62,31 +69,31 @@ BOOST_AUTO_TEST_CASE(start_send_stop_test)
 
 	static const std::string MSG = "testest";
 
+	hbm::sys::EventLoop eventloop;
+	std::thread worker(std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop))));
 	hbm::communication::NetadapterList adapters;
-	hbm::communication::MulticastServer mcsReceiver(MULTICASTGROUP, UDP_PORT, adapters);
-	hbm::communication::MulticastServer mcsSender(MULTICASTGROUP, UDP_PORT, adapters);
+	hbm::communication::MulticastServer mcsReceiver(adapters, eventloop);
+	hbm::communication::MulticastServer mcsSender(adapters, eventloop);
 
-	mcsSender.start();
+	mcsSender.start(MULTICASTGROUP, UDP_PORT, std::bind(&receiveAndDiscard, std::placeholders::_1));
 	mcsSender.addAllInterfaces();
-	std::thread threadSender(std::bind(&receiveAndDiscard, &mcsSender));
 
 	for (unsigned int i=0; i<CYCLECOUNT; ++i)
 	{
 		received.clear();
-		mcsReceiver.start();
+		mcsReceiver.start(MULTICASTGROUP, UDP_PORT, std::bind(&receiveAndKeep, std::placeholders::_1));
 		mcsReceiver.addAllInterfaces();
-		std::thread threadReceiver(std::bind(&receiveAndKeep, &mcsReceiver));
 		mcsSender.send(MSG.c_str(), MSG.length());
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		mcsReceiver.stop();
-		threadReceiver.join();
 		BOOST_CHECK(MSG==received);
 
 		std::cout << __FUNCTION__ << " " << i << std::endl;
 	}
 
 	mcsSender.stop();
-	threadSender.join();
+
+	eventloop.stop();
+	worker.join();
 
 	std::cout << __FUNCTION__ << " done" << std::endl;
 }

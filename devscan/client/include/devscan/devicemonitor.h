@@ -52,7 +52,7 @@ namespace hbm {
 			/// walks through all known announcements. Each expired entry will
 			/// be removed and expire callback will be fired.
 			/// \see setExpireCb
-			void checkForExpiredAnnouncements();
+			ssize_t checkForExpiredAnnouncements();
 
 		private:
 			struct expiringEntry {
