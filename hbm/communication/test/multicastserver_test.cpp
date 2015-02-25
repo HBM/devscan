@@ -84,7 +84,6 @@ BOOST_AUTO_TEST_CASE(start_send_stop_test)
 		mcsReceiver.start();
 		mcsReceiver.addAllInterfaces();
 		mcsSender.send(MSG.c_str(), MSG.length());
-		//std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		mcsReceiver.stop();
 		BOOST_CHECK(MSG==received);
 
