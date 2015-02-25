@@ -31,10 +31,10 @@ namespace hbm {
 
 
 			serverFixture::serverFixture()
-				: m_acceptor(m_eventloop, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1), std::bind(&serverFixture::serverEcho, this, std::placeholders::_1))
+				: m_acceptor(m_eventloop)
 			{
 				BOOST_TEST_MESSAGE("setup Fixture1");
-				int result = m_acceptor.start(PORT, 3);
+				int result = m_acceptor.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1), std::bind(&serverFixture::serverEcho, this, std::placeholders::_1));
 				BOOST_CHECK_NE(result, -1);
 				m_server = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(m_eventloop)));
 			}
@@ -94,8 +94,8 @@ namespace hbm {
 				hbm::sys::EventLoop eventloop;
 				std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop)));
 
-				hbm::communication::SocketNonblocking client(eventloop, std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
-				result = client.connect("127.0.0.1", std::to_string(PORT));
+				hbm::communication::SocketNonblocking client(eventloop);
+				result = client.connect("127.0.0.1", std::to_string(PORT), std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
 
 				cleaAnswer();
 				result = client.sendBlock(msg, sizeof(msg), false);

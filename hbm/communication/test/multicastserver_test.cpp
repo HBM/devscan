@@ -72,16 +72,16 @@ BOOST_AUTO_TEST_CASE(start_send_stop_test)
 	hbm::sys::EventLoop eventloop;
 	std::thread worker(std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop))));
 	hbm::communication::NetadapterList adapters;
-	hbm::communication::MulticastServer mcsReceiver(MULTICASTGROUP, UDP_PORT, adapters, eventloop, std::bind(&receiveAndKeep, std::placeholders::_1));
-	hbm::communication::MulticastServer mcsSender(MULTICASTGROUP, UDP_PORT, adapters, eventloop, std::bind(&receiveAndDiscard, std::placeholders::_1));
+	hbm::communication::MulticastServer mcsReceiver(adapters, eventloop);
+	hbm::communication::MulticastServer mcsSender(adapters, eventloop);
 
-	mcsSender.start();
+	mcsSender.start(MULTICASTGROUP, UDP_PORT, std::bind(&receiveAndDiscard, std::placeholders::_1));
 	mcsSender.addAllInterfaces();
 
 	for (unsigned int i=0; i<CYCLECOUNT; ++i)
 	{
 		received.clear();
-		mcsReceiver.start();
+		mcsReceiver.start(MULTICASTGROUP, UDP_PORT, std::bind(&receiveAndKeep, std::placeholders::_1));
 		mcsReceiver.addAllInterfaces();
 		mcsSender.send(MSG.c_str(), MSG.length());
 		mcsReceiver.stop();

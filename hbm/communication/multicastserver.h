@@ -48,7 +48,7 @@ namespace hbm {
 			typedef std::function < int (MulticastServer* mcs) > DataHandler_t;
 
 			/// @param address the multicast group
-			MulticastServer(const std::string& address, unsigned int port, const NetadapterList& netadapterList, sys::EventLoop &eventLoop, DataHandler_t dataHandler);
+			MulticastServer(NetadapterList& netadapterList, sys::EventLoop &eventLoop);
 
 			virtual ~MulticastServer();
 
@@ -62,7 +62,7 @@ namespace hbm {
 			/// all interfaces known to the internal netadapter list are dropped as receiving interfaces.
 			void dropAllInterfaces();
 
-			int start();
+			int start(const std::string& address, unsigned int port, DataHandler_t dataHandler);
 
 			void stop();
 
@@ -105,9 +105,9 @@ namespace hbm {
 			int process();
 
 			/// The All Hosts multicast group addresses all hosts on the same network segment.
-			const std::string m_address;
+			std::string m_address;
 
-			const unsigned int m_port;
+			unsigned int m_port;
 
 			static const SOCKET NO_SOCKET = static_cast<SOCKET>(-1);
 

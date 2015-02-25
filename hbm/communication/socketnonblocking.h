@@ -30,15 +30,15 @@ namespace hbm
 		public:
 			/// called on the arrival of data
 			typedef std::function < int (SocketNonblocking* pSocket) > DataCb_t;
-			SocketNonblocking(sys::EventLoop &eventLoop, DataCb_t dataHandler);
+			SocketNonblocking(sys::EventLoop &eventLoop);
 
 			/// \throw std::runtime_error on error
 			SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler);
 			virtual ~SocketNonblocking();
 
 			/// \return 0: success; -1: error
-			int connect(const std::string& address, const std::string& port);
-			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len);
+			int connect(const std::string& address, const std::string& port, DataCb_t dataHandler);
+			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler);
 
 			ssize_t sendBlock(const void* pBlock, size_t len, bool more);
 

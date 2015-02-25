@@ -19,11 +19,11 @@
 
 namespace hbm {
 	namespace communication {
-		TcpAcceptor::TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler)
+		TcpAcceptor::TcpAcceptor(sys::EventLoop &eventLoop)
 			: m_listeningSocket(-1)
 			, m_eventLoop(eventLoop)
-			, m_acceptCb(acceptCb)
-			, m_workerDataHandler(workerDataHandler)
+			, m_acceptCb()
+			, m_workerDataHandler()
 		{
 		}
 
@@ -32,7 +32,7 @@ namespace hbm {
 			stop();
 		}
 
-		int TcpAcceptor::start(uint16_t port, int backlog)
+		int TcpAcceptor::start(uint16_t port, int backlog, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler)
 		{
 			int result = bind(port);
 			if (result<0) {
@@ -42,6 +42,8 @@ namespace hbm {
 			if (result<0) {
 				return result;
 			}
+			m_acceptCb = acceptCb;
+			m_workerDataHandler = workerDataHandler;
 			m_eventLoop.addEvent(m_listeningSocket, std::bind(&TcpAcceptor::process, this));
 		}
 

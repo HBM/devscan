@@ -27,11 +27,11 @@
 const time_t TIMEOUT_CONNECT_S = 5;
 
 
-hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop, DataCb_t dataHandler)
+hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop)
 	: m_fd(-1)
 	, m_bufferedReader()
 	, m_eventLoop(eventLoop)
-	, m_dataHandler(dataHandler)
+	, m_dataHandler()
 {
 }
 
@@ -97,7 +97,7 @@ int hbm::communication::SocketNonblocking::setSocketOptions()
 	return 0;
 }
 
-int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port)
+int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port, DataCb_t dataHandler)
 {
 	struct addrinfo hints;
 	struct addrinfo* pResult = NULL;
@@ -111,14 +111,14 @@ int hbm::communication::SocketNonblocking::connect(const std::string &address, c
 	if( getaddrinfo(address.c_str(), port.c_str(), &hints, &pResult)!=0 ) {
 		return -1;
 	}
-	int retVal = connect(pResult->ai_family, pResult->ai_addr, pResult->ai_addrlen);
+	int retVal = connect(pResult->ai_family, pResult->ai_addr, pResult->ai_addrlen, dataHandler);
 
 	freeaddrinfo( pResult );
 
 	return retVal;
 }
 
-int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len)
+int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler)
 {
 	m_fd = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (m_fd==-1) {
@@ -156,6 +156,7 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 		return -1;
 	}
 
+	m_dataHandler = dataHandler;
 	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
 
 	return 0;

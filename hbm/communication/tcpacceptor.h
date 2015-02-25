@@ -28,13 +28,13 @@ namespace hbm {
 			typedef std::unique_ptr <SocketNonblocking > workerSocket_t;
 			typedef std::function < void (workerSocket_t) > Cb_t;
 
-			/// \param acceptCb called when accepting a new tcp client
-			/// \param workerDataHandler provided to the worker socket that is created for the connecting client
-			TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
+			TcpAcceptor(sys::EventLoop &eventLoop);
 			virtual ~TcpAcceptor();
 
 			/// @param numPorts Maximum length of the queue of pending connections
-			int start(uint16_t port, int backlog);
+			/// \param acceptCb called when accepting a new tcp client
+			/// \param workerDataHandler provided to the worker socket that is created for the connecting client
+			int start(uint16_t port, int backlog, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
 
 			void stop();
 

@@ -17,17 +17,14 @@ namespace hbm {
 		class Timer {
 		public:
 			/// \throws hbm::exception
-			Timer(EventLoop& eventLoop, EventHandler_t eventHandler);
+			Timer(EventLoop& eventLoop);
 
 			Timer(Timer&& source);
 
-			/// @param period_ms timer interval in ms
-			/// \throws hbm::exception
-			Timer(unsigned int period_ms, bool repeated, EventLoop& eventLoop, EventHandler_t eventHandler);
 			~Timer();
 
 			/// @param period_ms timer interval in ms
-			int set(unsigned int period_ms, bool repeated);
+			int set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler);
 
 			/// timer will not signal, wait will block.
 			/// \return 1 success, timer was running; 0 success

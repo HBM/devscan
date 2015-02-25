@@ -18,10 +18,10 @@
 
 namespace hbm {
 	namespace sys {
-		Timer::Timer(EventLoop &eventLoop, EventHandler_t eventHandler)
+		Timer::Timer(EventLoop &eventLoop)
 			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
 			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
+			, m_eventHandler()
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create timer fd");
@@ -40,26 +40,13 @@ namespace hbm {
 			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 		}
 
-		Timer::Timer(unsigned int period_ms, bool repeated, EventLoop &eventLoop, EventHandler_t eventHandler)
-			: m_fd(timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK))
-			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
-		{
-			if (m_fd<0) {
-				throw hbm::exception::exception("could not create timer fd");
-			}
-			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
-
-			set(period_ms, repeated);
-		}
-
 		Timer::~Timer()
 		{
 			m_eventLoop.eraseEvent(m_fd);
 			close(m_fd);
 		}
 
-		int Timer::set(unsigned int period_ms, bool repeated)
+		int Timer::set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler)
 		{
 			if (period_ms==0) {
 				return -1;
@@ -75,6 +62,7 @@ namespace hbm {
 				timespec.it_interval.tv_sec = period_s;
 				timespec.it_interval.tv_nsec = rest * 1000 * 1000;
 			}
+			m_eventHandler = eventHandler;
 
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}

@@ -127,7 +127,8 @@ BOOST_AUTO_TEST_CASE(oneshottimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer cyclicTimer(timerCycle, false, eventLoop, std::bind(&eventHandlerIncrement, &counter));
+	hbm::sys::Timer timer(eventLoop);
+	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_EQUAL(counter, 1);
@@ -144,7 +145,8 @@ BOOST_AUTO_TEST_CASE(cyclictimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer cyclicTimer(timerCycle, true, eventLoop, std::bind(&eventHandlerIncrement, &counter));
+	hbm::sys::Timer cyclicTimer(eventLoop);
+	cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_GE(counter, excpectedMinimum);
@@ -160,10 +162,11 @@ BOOST_AUTO_TEST_CASE(canceltimer_test)
 
 	unsigned int counter = 0;
 
-	hbm::sys::Timer cyclicTimer(timerCycle, false, eventLoop, std::bind(&eventHandlerIncrement, &counter));
+	hbm::sys::Timer timer(eventLoop);
+	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
 
-	cyclicTimer.cancel();
+	timer.cancel();
 
 	worker.join();
 
@@ -182,7 +185,8 @@ BOOST_AUTO_TEST_CASE(removenotifier_test)
 
 	{
 		// leaving this scope leads to destruction of the timer and the removal from the event loop
-		hbm::sys::Timer cyclicTimer(timerCycle, true, eventLoop, std::bind(&eventHandlerIncrement, &counter));
+		hbm::sys::Timer cyclicTimer(eventLoop);
+		cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
 		std::this_thread::sleep_for(std::chrono::milliseconds(timerCycle * timerCount / 2));
 	}
 

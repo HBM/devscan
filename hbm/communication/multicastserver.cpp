@@ -40,15 +40,15 @@
 
 namespace hbm {
 	namespace communication {
-		MulticastServer::MulticastServer(const std::string& address, unsigned int port, const NetadapterList &netadapterList, sys::EventLoop &eventLoop, DataHandler_t dataHandler)
-			: m_address(address)
-			, m_port(port)
+		MulticastServer::MulticastServer(NetadapterList& netadapterList, sys::EventLoop &eventLoop)
+			: m_address()
+			, m_port()
 			, m_ReceiveSocket(NO_SOCKET)
 			, m_SendSocket(NO_SOCKET)
 			, m_receiveAddr()
 			, m_netadapterList(netadapterList)
 			, m_eventLoop(eventLoop)
-			, m_dataHandler(dataHandler)
+			, m_dataHandler()
 		{
 
 #ifdef _WIN32
@@ -612,8 +612,11 @@ namespace hbm {
 		}
 
 
-		int MulticastServer::start()
+		int MulticastServer::start(const std::string& address, unsigned int port, const DataHandler_t dataHandler)
 		{
+			m_address = address;
+			m_port = port;
+			m_dataHandler = dataHandler;
 			int err = setupSendSocket();
 			if(err<0) {
 				return err;
