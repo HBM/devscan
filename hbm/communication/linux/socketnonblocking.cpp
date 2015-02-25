@@ -130,30 +130,28 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 	}
 
 	int err = ::connect(m_fd, pSockAddr, len);
-	if (err==0) {
-		return 0;
-	}
+	if (err==-1) {
+		// success if errno equals EINPROGRESS
+		if(errno != EINPROGRESS) {
+			syslog(LOG_ERR, "failed to connect errno=%d '%s'", errno, strerror(errno));
+			return -1;
+		}
+		struct pollfd pfd;
+		pfd.fd = m_fd;
+		pfd.events = POLLOUT;
+		do {
+			err = poll(&pfd, 1, TIMEOUT_CONNECT_S*1000);
+		} while((err==-1) && (errno==EINTR) );
+		if(err!=1) {
+			return -1;
+		}
 
-	// success if errno equals EINPROGRESS
-	if(errno != EINPROGRESS) {
-		syslog(LOG_ERR, "failed to connect errno=%d '%s'", errno, strerror(errno));
-		return -1;
-	}
-	struct pollfd pfd;
-	pfd.fd = m_fd;
-	pfd.events = POLLOUT;
-	do {
-		err = poll(&pfd, 1, TIMEOUT_CONNECT_S*1000);
-	} while((err==-1) && (errno==EINTR) );
-	if(err!=1) {
-		return -1;
-	}
-
-	int value;
-	len = sizeof(value);
-	getsockopt(m_fd, SOL_SOCKET, SO_ERROR, &value, &len);
-	if(value!=0) {
-		return -1;
+		int value;
+		len = sizeof(value);
+		getsockopt(m_fd, SOL_SOCKET, SO_ERROR, &value, &len);
+		if(value!=0) {
+			return -1;
+		}
 	}
 
 	m_dataHandler = dataHandler;
