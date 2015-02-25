@@ -34,7 +34,7 @@ namespace hbm {
 				: m_acceptor(m_eventloop)
 			{
 				BOOST_TEST_MESSAGE("setup Fixture1");
-				int result = m_acceptor.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1), std::bind(&serverFixture::serverEcho, this, std::placeholders::_1));
+				int result = m_acceptor.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1));
 				BOOST_CHECK_NE(result, -1);
 				m_server = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(m_eventloop)));
 			}
@@ -49,6 +49,8 @@ namespace hbm {
 
 			void serverFixture::acceptCb(TcpAcceptor::workerSocket_t worker)
 			{
+				worker->setDataCb(std::bind(&serverFixture::serverEcho, this, std::placeholders::_1));
+
 				m_workers.insert(std::move(worker));
 			}
 
@@ -61,6 +63,12 @@ namespace hbm {
 					result = pSocket->receive(buffer, sizeof(buffer));
 					if (result>0) {
 						result = pSocket->sendBlock(buffer, result, false);
+					} else if (result==0) {
+						// socket got closed
+					} else {
+						if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
+							// a real error
+						}
 					}
 				} while (result>0);
 				return result;

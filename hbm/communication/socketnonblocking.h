@@ -33,12 +33,15 @@ namespace hbm
 			SocketNonblocking(sys::EventLoop &eventLoop);
 
 			/// \throw std::runtime_error on error
-			SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler);
+			SocketNonblocking(int fd, sys::EventLoop &eventLoop);
 			virtual ~SocketNonblocking();
 
 			/// \return 0: success; -1: error
 			int connect(const std::string& address, const std::string& port, DataCb_t dataHandler);
 			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler);
+
+			void setDataCb(DataCb_t dataCb);
+			
 
 			ssize_t sendBlock(const void* pBlock, size_t len, bool more);
 

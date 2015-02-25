@@ -33,8 +33,7 @@ namespace hbm {
 
 			/// @param numPorts Maximum length of the queue of pending connections
 			/// \param acceptCb called when accepting a new tcp client
-			/// \param workerDataHandler provided to the worker socket that is created for the connecting client
-			int start(uint16_t port, int backlog, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
+			int start(uint16_t port, int backlog, Cb_t acceptCb);
 
 			void stop();
 
@@ -67,7 +66,6 @@ namespace hbm {
 			int m_listeningSocket;
 			sys::EventLoop& m_eventLoop;
 			Cb_t m_acceptCb;
-			SocketNonblocking::DataCb_t m_workerDataHandler;
 		};
 	}
 }

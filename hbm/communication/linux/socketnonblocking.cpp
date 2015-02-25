@@ -35,11 +35,11 @@ hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLo
 {
 }
 
-hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler)
+hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop)
 	: m_fd(fd)
 	, m_bufferedReader()
 	, m_eventLoop(eventLoop)
-	, m_dataHandler(dataHandler)
+	, m_dataHandler()
 {
 	if (setSocketOptions()<0) {
 		throw std::runtime_error("error setting socket options");
@@ -51,6 +51,11 @@ hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
 {
 	disconnect();
+}
+
+void hbm::communication::SocketNonblocking::setDataCb(DataCb_t dataCb)
+{
+	m_dataHandler = dataCb;
 }
 
 int hbm::communication::SocketNonblocking::setSocketOptions()
