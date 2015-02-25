@@ -144,14 +144,15 @@ namespace hbm {
 						}
 						ssize_t result;
 						do {
+							// we are working edge triggered, hence we need to read everything that is available
 							result = pEventInfo->eventHandler();
 						} while (result>0);
-						if(result<0) {
-							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
-								// this event is removed from the event loop.
-								eraseEvent(pEventInfo->fd);
-							}
-						}
+//						if(result<0) {
+//							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
+//								// this event is removed from the event loop.
+//								eraseEvent(pEventInfo->fd);
+//							}
+//						}
 					}
 				}
 			}
@@ -202,13 +203,14 @@ namespace hbm {
 						ssize_t result;
 						do {
 							result = pEventInfo->eventHandler();
+							// we are working edge triggered, hence we need to read everything that is available
 						} while (result>0);
-						if(result<0) {
-							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
-								// this event is removed from the event loop.
-								eraseEvent(pEventInfo->fd);
-							}
-						}
+//						if(result<0) {
+//							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
+//								// this event is removed from the event loop.
+//								eraseEvent(pEventInfo->fd);
+//							}
+//						}
 					}
 				}
 			}
