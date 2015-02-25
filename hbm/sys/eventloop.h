@@ -18,12 +18,9 @@
 #include <functional>
 #include <chrono>
 #include <mutex>
-#include <condition_variable>
-#include <mutex>
 
 #include "hbm/exception/exception.hpp"
 #include "hbm/sys/defines.h"
-//#include "hbm/sys/notifier.h"
 
 namespace hbm {
 	namespace sys {
