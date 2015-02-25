@@ -129,7 +129,9 @@ namespace hbm {
 					return nfds;
 				}
 
-				for (int n = 0; n < nfds; ++n) {
+				for (int n = nfds-1; n >= 0; --n) {
+					// loop in reverse order. change should be handled last!
+					// otherwise chanheHandler may remove stuff that is to be handled.
 					if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
 						if(pEventInfo==nullptr) {
@@ -180,7 +182,9 @@ namespace hbm {
 					return nfds;
 				}
 
-				for (int n = 0; n < nfds; ++n) {
+				for (int n = nfds-1; n >= 0; --n) {
+					// loop in reverse order. change should be handled last!
+					// otherwise chanheHandler may remove stuff that is to be handled.
 					if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
 						if(pEventInfo==nullptr) {
