@@ -15,12 +15,6 @@ message(STATUS "-----------------------------------------------------------")
 message(STATUS "CppCheck            : " ${WITH_CPPCHECK})
 message(STATUS "-----------------------------------------------------------")
 
-find_package(Boost COMPONENTS)
-
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif(Boost_FOUND)
-
 include_directories(..)
 include_directories(../..)
 include_directories(../../jsoncpp/include)
