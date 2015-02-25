@@ -129,10 +129,14 @@ namespace hbm {
 					return nfds;
 				}
 
-				for (int n = nfds-1; n >= 0; --n) {
-					// loop in reverse order. change should be handled last!
-					// otherwise chanheHandler may remove stuff that is to be handled.
-					if(events[n].events & EPOLLIN) {
+				for (int n = 0; n < nfds; ++n) {
+					if(events[n].events & (EPOLLHUP | EPOLLERR)) {
+						// detect shutdown or error before checking for available data. The callback routine might not be valid anymore!
+						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
+						if(pEventInfo!=nullptr) {
+							eraseEvent(pEventInfo->fd);
+						}
+					} else if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
 						if(pEventInfo==nullptr) {
 							// stop notification!
@@ -182,10 +186,14 @@ namespace hbm {
 					return nfds;
 				}
 
-				for (int n = nfds-1; n >= 0; --n) {
-					// loop in reverse order. change should be handled last!
-					// otherwise chanheHandler may remove stuff that is to be handled.
-					if(events[n].events & EPOLLIN) {
+				for (int n = 0; n < nfds; ++n) {
+					if(events[n].events & (EPOLLHUP | EPOLLERR)) {
+						// detect shutdown or error before checking for available data. The callback routine might not be valid anymore!
+						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
+						if(pEventInfo!=nullptr) {
+							eraseEvent(pEventInfo->fd);
+						}
+					} else if(events[n].events & EPOLLIN) {
 						eventInfo_t* pEventInfo = reinterpret_cast < eventInfo_t* > (events[n].data.ptr);
 						if(pEventInfo==nullptr) {
 							// stop notification!
