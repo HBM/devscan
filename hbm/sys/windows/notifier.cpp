@@ -18,8 +18,6 @@ namespace hbm {
 			, m_eventLoop(eventLoop)
 			, m_eventHandler(eventHandler)
 		{
-			m_fd = CreateEvent(NULL, false, false, NULL);
-			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
 		}
 
 		Notifier::~Notifier()
@@ -45,6 +43,13 @@ namespace hbm {
 				}
 			}
 			return result;
+		}
+
+		int Notifier::set(uEventHandler_t eventHandler)
+		{
+			m_fd = CreateEvent(NULL, false, false, NULL);
+			m_eventHandler = eventHandler;
+			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
 		}
 
 		int Notifier::read()

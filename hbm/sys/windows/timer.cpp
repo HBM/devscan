@@ -28,26 +28,12 @@ namespace hbm {
 			pTimer->cancel();
 		}
 
-		Timer::Timer(EventLoop& eventLoop, EventHandler_t eventHandler)
+		Timer::Timer(EventLoop& eventLoop)
 			: m_fd(NULL)
 			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
+			, m_eventHandler()
 			, m_isRunning(false)
 		{
-			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
-			cancel();
-			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
-		}
-
-		Timer::Timer(unsigned int period_ms, bool repeated, EventLoop& eventLoop, EventHandler_t eventHandler)
-			: m_fd(NULL)
-			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
-			, m_isRunning(false)
-		{
-			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
-			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
-			set(period_ms, repeated);
 		}
 
 		Timer::~Timer()
@@ -56,11 +42,16 @@ namespace hbm {
 			CloseHandle(m_fd);
 		}
 
-		int Timer::set(unsigned int period_ms, bool repeated)
+		int Timer::set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler)
 		{
 			LARGE_INTEGER dueTime;
 			static const int64_t multilpier = -10000; // negative because we want a relative time
 			LONG period = 0; // in ms
+
+			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
+			cancel();
+			m_eventHandler = eventHandler;
+			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 
 			if (repeated) {
 				period = period_ms;

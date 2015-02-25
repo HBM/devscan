@@ -22,27 +22,37 @@
 const time_t TIMEOUT_CONNECT_S = 5;
 
 
-hbm::communication::SocketNonblocking::SocketNonblocking()
+hbm::communication::SocketNonblocking::SocketNonblocking(sys::EventLoop &eventLoop)
 	: m_fd(-1)
 	, m_bufferedReader()
+	, m_eventLoop(eventLoop)
+	, m_dataHandler()
 {
 	WSADATA wsaData;
 	WSAStartup(2, &wsaData);
 	m_event = WSACreateEvent();
 }
 
-hbm::communication::SocketNonblocking::SocketNonblocking(int fd)
+hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop &eventLoop, DataCb_t dataHandler)
 	: m_fd(fd)
 	, m_bufferedReader()
+	, m_eventLoop(eventLoop)
+	, m_dataHandler(dataHandler)
 {
 	WSADATA wsaData;
 	WSAStartup(2, &wsaData);
 	m_event = WSACreateEvent();
+
+	if (setSocketOptions()<0) {
+		throw std::runtime_error("error setting socket options");
+	}
+
+	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
 }
 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
 {
-	stop();
+	disconnect();
 	WSACloseEvent(m_event);
 }
 
@@ -87,7 +97,7 @@ int hbm::communication::SocketNonblocking::init(int domain)
 	return retVal;
 }
 
-int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port)
+int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port, DataCb_t dataHandler)
 {
 	struct addrinfo hints;
 	struct addrinfo* pResult = NULL;
@@ -102,14 +112,14 @@ int hbm::communication::SocketNonblocking::connect(const std::string &address, c
 		return -1;
 	}
 	
-	int retVal = connect(pResult->ai_family, pResult->ai_addr, sizeof(sockaddr_in));
+	int retVal = connect(pResult->ai_family, pResult->ai_addr, sizeof(sockaddr_in), dataHandler);
 
 	freeaddrinfo( pResult );
 
 	return retVal;
 }
 
-int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len)
+int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler)
 {
 	int err = init(domain);
 
@@ -148,26 +158,20 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 		err = -1;
 	}
 
+	m_dataHandler = dataHandler;
+	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
+
+
 	return err;
 }
 
-
-int hbm::communication::SocketNonblocking::bind(uint16_t Port)
+int hbm::communication::SocketNonblocking::process()
 {
-	//ipv6 does work for ipv4 too!
-	sockaddr_in6 address;
-
-	memset(&address, 0, sizeof(address));
-	address.sin6_family = AF_INET;
-	address.sin6_addr = in6addr_any;
-	address.sin6_port = htons(Port);
-
-	int retVal = init(address.sin6_family);
-	if (retVal == -1) {
-		return retVal;
+	if (m_dataHandler) {
+		return m_dataHandler(this);
+	} else {
+		return -1;
 	}
-	retVal = ::bind(m_fd, reinterpret_cast<sockaddr*>(&address), sizeof(address));
-	return retVal;
 }
 
 ssize_t hbm::communication::SocketNonblocking::receive(void* pBlock, size_t size)
@@ -226,7 +230,6 @@ ssize_t hbm::communication::SocketNonblocking::receiveComplete(void* pBlock, siz
   }
   return static_cast < ssize_t > (len);
 }
-
 
 ssize_t hbm::communication::SocketNonblocking::sendBlock(const void* pBlock, size_t size, bool more)
 {
@@ -309,8 +312,9 @@ bool hbm::communication::SocketNonblocking::checkSockAddr(const struct ::sockadd
 }
 
 
-void hbm::communication::SocketNonblocking::stop()
+void hbm::communication::SocketNonblocking::disconnect()
 {
+	m_eventLoop.eraseEvent(m_fd);
 	::shutdown(m_fd, SD_BOTH);
 	::closesocket(m_fd);
 	m_fd = -1;
