@@ -98,7 +98,8 @@ BOOST_AUTO_TEST_CASE(notify_test)
 	int result;
 	static const std::chrono::milliseconds duration(100);
 	hbm::sys::EventLoop eventLoop;
-	hbm::sys::Notifier notifier(eventLoop, std::bind(&eventHandlerIncrement, &value));
+	hbm::sys::Notifier notifier(eventLoop);
+	notifier.set(std::bind(&eventHandlerIncrement, &value));
 	BOOST_CHECK_EQUAL(value, 0);
 
 	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, &eventLoop));

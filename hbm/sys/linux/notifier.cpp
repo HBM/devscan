@@ -15,15 +15,14 @@
 
 namespace hbm {
 	namespace sys {
-		Notifier::Notifier(EventLoop& eventLoop, EventHandler_t eventHandler)
+		Notifier::Notifier(EventLoop& eventLoop)
 			: m_fd(eventfd(0, EFD_NONBLOCK))
 			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
+			, m_eventHandler()
 		{
 			if (m_fd<0) {
 				throw hbm::exception::exception("could not create event fd");
 			}
-			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
 		}
 
 		Notifier::Notifier(Notifier&& source)
@@ -39,6 +38,13 @@ namespace hbm {
 			m_eventLoop.eraseEvent(m_fd);
 			close(m_fd);
 		}
+
+		int Notifier::set(EventHandler_t eventHandler)
+		{
+			m_eventHandler =eventHandler;
+			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
+		}
+
 
 		int Notifier::notify()
 		{

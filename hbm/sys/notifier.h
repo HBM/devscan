@@ -16,10 +16,12 @@ namespace hbm {
 		class Notifier {
 		public:
 			/// \throws hbm::exception
-			Notifier(EventLoop& eventLoop, EventHandler_t eventHandler);
+			Notifier(EventLoop& eventLoop);
 			Notifier(Notifier&& source);
 
 			virtual ~Notifier();
+
+			int set(EventHandler_t eventHandler);
 
 			int notify();
 		private:
