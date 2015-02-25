@@ -24,9 +24,9 @@ namespace hbm {
 		const std::chrono::milliseconds ConfigureClient::TIMETOWAITFORANSWERS(3000);
 
 		ConfigureClient::ConfigureClient()
-			: m_MulticastServer(CONFIG_IPV4_ADDRESS, CONFIG_UDP_PORT, m_netadapterList, m_eventloop, std::bind(&ConfigureClient::recvCb, this, std::placeholders::_1))
+			: m_MulticastServer(m_netadapterList, m_eventloop)
 		{
-			m_MulticastServer.start();
+			m_MulticastServer.start(CONFIG_IPV4_ADDRESS, CONFIG_UDP_PORT, std::bind(&ConfigureClient::recvCb, this, std::placeholders::_1));
 			m_MulticastServer.addAllInterfaces();
 
 			srand (static_cast < unsigned int > (time(NULL)));

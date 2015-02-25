@@ -21,8 +21,8 @@ namespace hbm {
 
 		Receiver::Receiver()
 			: m_netadapterList()
-			, m_scanner(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, m_netadapterList, m_eventloop, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1))
-			, m_timer(1000, true, m_eventloop, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)))
+			, m_scanner(m_netadapterList, m_eventloop)
+			, m_timer(m_eventloop)
 #ifndef _WIN32
 			, m_netlink(m_netadapterList, m_scanner, m_eventloop)
 #endif
@@ -63,7 +63,8 @@ namespace hbm {
 
 		void Receiver::start()
 		{
-			m_scanner.start();
+			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute();
 		}
@@ -71,8 +72,8 @@ namespace hbm {
 
 		void Receiver::start_for(std::chrono::milliseconds timeOfExecution)
 		{
-
-			m_scanner.start();
+			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute_for(timeOfExecution);
 		}
