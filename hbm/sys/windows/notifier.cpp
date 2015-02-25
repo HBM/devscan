@@ -13,10 +13,10 @@
 
 namespace hbm {
 	namespace sys {
-		Notifier::Notifier(EventLoop& eventLoop, EventHandler_t eventHandler)
+		Notifier::Notifier(EventLoop& eventLoop)
 			: m_fd(NULL)
 			, m_eventLoop(eventLoop)
-			, m_eventHandler(eventHandler)
+			, m_eventHandler()
 		{
 		}
 
@@ -25,6 +25,7 @@ namespace hbm {
 			m_eventLoop.eraseEvent(m_fd);
 			CloseHandle(m_fd);
 		}
+
 
 		int Notifier::notify()
 		{
@@ -45,11 +46,12 @@ namespace hbm {
 			return result;
 		}
 
-		int Notifier::set(uEventHandler_t eventHandler)
+		int Notifier::set(EventHandler_t eventHandler)
 		{
 			m_fd = CreateEvent(NULL, false, false, NULL);
 			m_eventHandler = eventHandler;
 			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
+			return 0;
 		}
 
 		int Notifier::read()
