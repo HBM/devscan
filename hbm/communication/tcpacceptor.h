@@ -33,6 +33,7 @@ namespace hbm {
 			TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
 			virtual ~TcpAcceptor();
 
+			/// @param numPorts Maximum length of the queue of pending connections
 			int start(uint16_t port, int backlog);
 
 			void stop();
@@ -52,10 +53,11 @@ namespace hbm {
 			int bind(uint16_t Port);
 
 			/// Listens to connecting clients, a server call
-			/// @param numPorts Maximum length of the queue of pending connections.
+			/// @param numPorts Maximum length of the queue of pending connections
 			int listenToClient(int numPorts);
 
 			/// called by eventloop
+			/// accepts a new connection creates new worker socket anf calls acceptCb
 			int process();
 
 			/// accepts a new connecting client.
