@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="devicemonitor.cpp" />
+    <ClCompile Include="receiver.cpp" />
+    <ClCompile Include="configureclient.cpp" />
+    <ClCompile Include="..\..\..\hbm\sys\windows\eventloop.cpp">
+      <Filter>hbm\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\sys\windows\timer.cpp">
+      <Filter>hbm\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\communication\multicastserver.cpp">
+      <Filter>hbm\communication</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\communication\netadapter.cpp">
+      <Filter>hbm\communication</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\communication\netadapterlist.cpp">
+      <Filter>hbm\communication</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\sys\windows\notifier.cpp">
+      <Filter>hbm\sys\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\hbm\string\split.cpp">
+      <Filter>hbm\string</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="common">
+      <UniqueIdentifier>{a6424615-ce41-43ad-8a19-0864ef419d60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{54c9dba7-4614-4826-a017-eefc64af96a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm">
+      <UniqueIdentifier>{0060f007-2edb-4d71-94f3-6e4556c33ec2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm\communication">
+      <UniqueIdentifier>{142bbbc4-37b2-4cbc-91a5-3a2d620a0c12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm\sys">
+      <UniqueIdentifier>{c6693d10-3441-461e-90ed-38613fb93226}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm\sys\windows">
+      <UniqueIdentifier>{12c8bbd3-551f-45af-a8e7-b3e4c5d89bea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm\string">
+      <UniqueIdentifier>{8d7bc7f7-e5e1-4fea-ae88-c60444043ab5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\JsonNames.h">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\exception\exception.hpp">
+      <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hbm\sys\eventloop.h">
+      <Filter>hbm\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\hbm\sys\timer.h">
+      <Filter>hbm\sys</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

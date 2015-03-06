@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "netadapter_test", "netadapter_test.vcxproj", "{EC3A17B7-5C48-4436-89AB-32AFEE8D28D2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "socketnonblocking_test", "socketnonblocking_test.vcxproj", "{2F3CD887-A417-4030-B542-3A8224278723}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC3A17B7-5C48-4436-89AB-32AFEE8D28D2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EC3A17B7-5C48-4436-89AB-32AFEE8D28D2}.Debug|Win32.Build.0 = Debug|Win32
+		{EC3A17B7-5C48-4436-89AB-32AFEE8D28D2}.Release|Win32.ActiveCfg = Release|Win32
+		{EC3A17B7-5C48-4436-89AB-32AFEE8D28D2}.Release|Win32.Build.0 = Release|Win32
+		{2F3CD887-A417-4030-B542-3A8224278723}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2F3CD887-A417-4030-B542-3A8224278723}.Debug|Win32.Build.0 = Debug|Win32
+		{2F3CD887-A417-4030-B542-3A8224278723}.Release|Win32.ActiveCfg = Release|Win32
+		{2F3CD887-A417-4030-B542-3A8224278723}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -13,53 +13,25 @@
 #include <syslog.h>
 
 #include "hbm/communication/socketnonblocking.h"
-#include "hbm/communication/tcpacceptor.h"
+#include "hbm/communication/tcpserver.h"
 #include "hbm/sys/eventloop.h"
 
 
 namespace hbm {
 	namespace communication {
-		TcpAcceptor::TcpAcceptor(sys::EventLoop &eventLoop)
+		TcpServer::TcpServer(sys::EventLoop &eventLoop)
 			: m_listeningSocket(-1)
 			, m_eventLoop(eventLoop)
 			, m_acceptCb()
 		{
 		}
 
-		TcpAcceptor::~TcpAcceptor()
+		TcpServer::~TcpServer()
 		{
 			stop();
 		}
 
-		int TcpAcceptor::start(uint16_t port, int backlog, Cb_t acceptCb)
-		{
-			int result = bind(port);
-			if (result<0) {
-				return result;
-			}
-			result = listen(m_listeningSocket, backlog);
-			if (result<0) {
-				return result;
-			}
-			m_acceptCb = acceptCb;
-			m_eventLoop.addEvent(m_listeningSocket, std::bind(&TcpAcceptor::process, this));
-		}
-
-		void TcpAcceptor::stop()
-		{
-			m_eventLoop.eraseEvent(m_listeningSocket);
-			close(m_listeningSocket);
-		}
-
-		int TcpAcceptor::init(int domain)
-		{
-			m_listeningSocket = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
-			if (m_listeningSocket==-1) {
-				return -1;
-			}
-		}
-
-		int TcpAcceptor::bind(uint16_t Port)
+		int TcpServer::start(uint16_t port, int backlog, Cb_t acceptCb)
 		{
 			//ipv6 does work for ipv4 too!
 			sockaddr_in6 address;
@@ -67,7 +39,7 @@ namespace hbm {
 			memset(&address, 0, sizeof(address));
 			address.sin6_family = AF_INET6;
 			address.sin6_addr = in6addr_any;
-			address.sin6_port = htons(Port);
+			address.sin6_port = htons(port);
 
 			m_listeningSocket = ::socket(address.sin6_family, SOCK_STREAM | SOCK_NONBLOCK, 0);
 			if (m_listeningSocket==-1) {
@@ -78,29 +50,41 @@ namespace hbm {
 				syslog(LOG_ERR, "%s: Binding socket to port initialization failed '%s'", __FUNCTION__ , strerror(errno));
 				return -1;
 			}
-			m_eventLoop.addEvent(m_listeningSocket, std::bind(&TcpAcceptor::process, this));
+
+			if (listen(m_listeningSocket, backlog)==-1) {
+				return -1;
+			}
+
+			m_acceptCb = acceptCb;
+			if (acceptCb) {
+				m_eventLoop.addEvent(m_listeningSocket, std::bind(&TcpServer::process, this));
+			}
+
 
 			return 0;
 		}
 
-		TcpAcceptor::workerSocket_t TcpAcceptor::acceptClient()
+		void TcpServer::stop()
 		{
-			sockaddr_in SockAddr;
-			// the length of the client's address
-			socklen_t socketAddressLen = sizeof(SockAddr);
-			int clientFd = accept(m_listeningSocket, reinterpret_cast<sockaddr*>(&SockAddr), &socketAddressLen);
+			m_eventLoop.eraseEvent(m_listeningSocket);
+			close(m_listeningSocket);
+		}
+
+
+
+		workerSocket_t TcpServer::acceptClient()
+		{
+			int clientFd = accept(m_listeningSocket, NULL, NULL);
 
 			if (clientFd<0) {
-				syslog(LOG_ERR, "%s: Accept failed!", __FUNCTION__);
 				return workerSocket_t();
 			}
-
 
 			return workerSocket_t(new SocketNonblocking(clientFd, m_eventLoop));
 		}
 
 
-		int TcpAcceptor::process()
+		int TcpServer::process()
 		{
 			workerSocket_t worker = acceptClient();
 			if (!worker) {

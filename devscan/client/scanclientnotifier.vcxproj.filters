@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="scanclientnotifier.cpp" />
+    <ClCompile Include="..\..\hbm\string\split.cpp">
+      <Filter>hbm\string</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="hbm">
+      <UniqueIdentifier>{e32fca6b-2b0f-460a-8616-a111325b4262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hbm\string">
+      <UniqueIdentifier>{b80de11b-89d1-4832-ac98-ead67ab54b54}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
