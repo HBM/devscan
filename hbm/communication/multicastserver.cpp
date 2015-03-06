@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <netdb.h>
 #endif
-#include <chrono>
 
 #include "hbm/exception/exception.hpp"
 #include "hbm/sys/defines.h"
@@ -616,7 +615,6 @@ namespace hbm {
 		{
 			m_address = address;
 			m_port = port;
-			m_dataHandler = dataHandler;
 			int err = setupSendSocket();
 			if(err<0) {
 				return err;
@@ -627,16 +625,20 @@ namespace hbm {
 				return err;
 			}
 
+			m_dataHandler = dataHandler;
+			if (dataHandler) {
 #ifdef _WIN32
-			m_eventLoop.addEvent(m_event, std::bind(&MulticastServer::process, this));
+				m_eventLoop.addEvent(m_event, std::bind(&MulticastServer::process, this));
 #else
-			m_eventLoop.addEvent(m_ReceiveSocket, std::bind(&MulticastServer::process, this));
+				m_eventLoop.addEvent(m_ReceiveSocket, std::bind(&MulticastServer::process, this));
 #endif
+			}
 			return 0;
 		}
 
 		void MulticastServer::stop()
 		{
+			dropAllInterfaces();
 #ifdef _WIN32
 			m_eventLoop.eraseEvent(m_event);
 #else
@@ -667,3 +669,5 @@ namespace hbm {
 		}
 	}
 }
+
+

@@ -3,6 +3,10 @@
 // See file LICENSE provided
 
 
+#ifndef stack_trace_hpp_
+#define stack_trace_hpp_
+
+
 #include <string>
 
 #ifdef __GNUG__
@@ -40,3 +44,6 @@ namespace hbm {
 		}
 	}
 }
+
+
+#endif

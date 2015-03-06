@@ -19,7 +19,7 @@
 
 
 #include "hbm/communication/socketnonblocking.h"
-#include "hbm/communication/tcpacceptor.h"
+#include "hbm/communication/tcpserver.h"
 #include "hbm/communication/test/socketnonblocking_test.h"
 #include "hbm/sys/eventloop.h"
 
@@ -31,27 +31,32 @@ namespace hbm {
 
 
 			serverFixture::serverFixture()
-				: m_acceptor(m_eventloop)
+				: m_server(m_eventloop)
 			{
 				BOOST_TEST_MESSAGE("setup Fixture1");
-				int result = m_acceptor.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1));
+				int result = m_server.start(PORT, 3, std::bind(&serverFixture::acceptCb, this, std::placeholders::_1));
 				BOOST_CHECK_NE(result, -1);
-				m_server = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(m_eventloop)));
+				m_serverWorker = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(m_eventloop)));
 			}
 
 			serverFixture::~serverFixture()
 			{
 				BOOST_TEST_MESSAGE("teardown Fixture1");
 				m_eventloop.stop();
-				m_server.join();
+				m_serverWorker.join();
 			}
 
 
-			void serverFixture::acceptCb(TcpAcceptor::workerSocket_t worker)
+			void serverFixture::acceptCb(workerSocket_t worker)
 			{
 				worker->setDataCb(std::bind(&serverFixture::serverEcho, this, std::placeholders::_1));
 
 				m_workers.insert(std::move(worker));
+			}
+
+			void serverFixture::removeWorker(workerSocket_t worker)
+			{
+
 			}
 
 			int serverFixture::serverEcho(hbm::communication::SocketNonblocking* pSocket)
@@ -97,15 +102,16 @@ namespace hbm {
 			{
 				int result;
 				const char msg[] = "hallo!";
-				char answer[1024];
 
 				hbm::sys::EventLoop eventloop;
 				std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop)));
 
 				hbm::communication::SocketNonblocking client(eventloop);
-				result = client.connect("127.0.0.1", std::to_string(PORT), std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
+				result = client.connect("127.0.0.1", std::to_string(PORT));
+				BOOST_CHECK_NE(result, -1);
+				client.setDataCb(std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
 
-				cleaAnswer();
+				clearAnswer();
 				result = client.sendBlock(msg, sizeof(msg), false);
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				BOOST_CHECK_EQUAL(result, sizeof(msg));

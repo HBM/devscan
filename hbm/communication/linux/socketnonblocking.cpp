@@ -44,8 +44,6 @@ hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop 
 	if (setSocketOptions()<0) {
 		throw std::runtime_error("error setting socket options");
 	}
-
-	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
 }
 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
@@ -56,6 +54,11 @@ hbm::communication::SocketNonblocking::~SocketNonblocking()
 void hbm::communication::SocketNonblocking::setDataCb(DataCb_t dataCb)
 {
 	m_dataHandler = dataCb;
+	if (dataCb) {
+		m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
+	} else {
+		m_eventLoop.eraseEvent(m_fd);
+	}
 }
 
 int hbm::communication::SocketNonblocking::setSocketOptions()
@@ -102,7 +105,7 @@ int hbm::communication::SocketNonblocking::setSocketOptions()
 	return 0;
 }
 
-int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port, DataCb_t dataHandler)
+int hbm::communication::SocketNonblocking::connect(const std::string &address, const std::string& port)
 {
 	struct addrinfo hints;
 	struct addrinfo* pResult = NULL;
@@ -116,14 +119,14 @@ int hbm::communication::SocketNonblocking::connect(const std::string &address, c
 	if( getaddrinfo(address.c_str(), port.c_str(), &hints, &pResult)!=0 ) {
 		return -1;
 	}
-	int retVal = connect(pResult->ai_family, pResult->ai_addr, pResult->ai_addrlen, dataHandler);
+	int retVal = connect(pResult->ai_family, pResult->ai_addr, pResult->ai_addrlen);
 
 	freeaddrinfo( pResult );
 
 	return retVal;
 }
 
-int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler)
+int hbm::communication::SocketNonblocking::connect(int domain, const struct sockaddr* pSockAddr, socklen_t len)
 {
 	m_fd = ::socket(domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
 	if (m_fd==-1) {
@@ -158,10 +161,6 @@ int hbm::communication::SocketNonblocking::connect(int domain, const struct sock
 			return -1;
 		}
 	}
-
-	m_dataHandler = dataHandler;
-	m_eventLoop.addEvent(m_fd, std::bind(&SocketNonblocking::process, this));
-
 	return 0;
 }
 

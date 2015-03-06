@@ -6,10 +6,6 @@
 #include <iostream>
 #include <WinSock2.h>
 #include <Windows.h>
-#define syslog fprintf
-#define LOG_DEBUG stdout
-#define LOG_INFO stdout
-#define LOG_ERR stderr
 #define ssize_t int
 #include <chrono>
 #include <mutex>
@@ -114,32 +110,26 @@ namespace hbm {
 			DWORD dwEvent;
 			eventInfo_t evi;
 			do {
-				do {
 					
-					changeHandler();
-
-					if (endTime != std::chrono::steady_clock::time_point()) {
-						std::chrono::milliseconds timediff = std::chrono::duration_cast <std::chrono::milliseconds> (endTime - std::chrono::steady_clock::now());
-						if (timediff.count() > 0) {
-							timeout = static_cast<int> (timediff.count());
-						} else {
-							timeout = 0;
-						}
+				if (endTime != std::chrono::steady_clock::time_point()) {
+					std::chrono::milliseconds timediff = std::chrono::duration_cast <std::chrono::milliseconds> (endTime - std::chrono::steady_clock::now());
+					if (timediff.count() > 0) {
+						timeout = static_cast<int> (timediff.count());
+					} else {
+						timeout = 0;
 					}
-					dwEvent = WaitForMultipleObjects(static_cast < DWORD > (m_handles.size()), &m_handles[0], FALSE, timeout);
-					if (dwEvent == WAIT_FAILED) {
-						int retval = GetLastError();
-						std::cout << retval << std::endl;
-						return 0;
-						break;
+				}
+				dwEvent = WaitForMultipleObjects(static_cast < DWORD > (m_handles.size()), &m_handles[0], FALSE, timeout);
+				if (dwEvent == WAIT_FAILED) {
+					int lastError = GetLastError();
+					// ERROR_INVALID_HANDLE might happen on removal of events.
+					if (lastError != ERROR_INVALID_HANDLE) {
+						return -1;
 					}
-
-					if (dwEvent == WAIT_TIMEOUT) {
-						// stop because of timeout
-						return 0;
-						break;
-					}
-
+				} else if (dwEvent == WAIT_TIMEOUT) {
+					// stop because of timeout
+					return 0;
+				} else {
 					event fd = m_handles[WAIT_OBJECT_0 + dwEvent];
 					evi = m_eventInfos[fd];
 					// this is a workaround. WSARecvMsg does not reset the event!
@@ -152,13 +142,10 @@ namespace hbm {
 					do {
 						// we do this until nothing is left. This is important because of our call to WSAResetEvent above.
 						nbytes = evi.eventHandler();
-					} while (nbytes>0); 
-					if (nbytes < 0) {
-						// stop because of error
-						return nbytes;
-					}
-				} while (nbytes >= 0);
-			} while (evi.fd == m_changeFd); // in case of change we start all over again!
+					} while (nbytes > 0);
+				}
+
+			} while (true);
 
 
 			return 0;

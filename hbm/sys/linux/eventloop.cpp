@@ -2,7 +2,6 @@
 // Distributed under MIT license
 // See file LICENSE provided
 
-#include <iostream>
 #include <chrono>
 #include <cstring>
 #include <unistd.h>
@@ -26,21 +25,21 @@ namespace hbm {
 			, m_stopFd(eventfd(0, EFD_NONBLOCK))
 		{
 			if(m_epollfd==-1) {
-				throw hbm::exception::exception(std::string("epoll_create failed)") + strerror(errno));
+				throw hbm::exception::exception(std::string("epoll_create failed ") + strerror(errno));
 			}
 
 			struct epoll_event ev;
 			ev.events = EPOLLIN | EPOLLET;
 			ev.data.ptr = nullptr;
 			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_stopFd, &ev) == -1) {
-				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+				throw hbm::exception::exception(std::string("add stop notifier to eventloop failed ") + strerror(errno));
 			}
 
 			m_changeEvent.fd = m_changeFd;
 			m_changeEvent.eventHandler = std::bind(&EventLoop::changeHandler, this);
 			ev.data.ptr = &m_changeEvent;
 			if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, m_changeFd, &ev) == -1) {
-				syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
+				throw hbm::exception::exception(std::string("add change notifier to eventloop failed ") + strerror(errno));
 			}
 		}
 
@@ -58,6 +57,11 @@ namespace hbm {
 			if (result>0) {
 				for(changelist_t::const_iterator iter = m_changeList.begin(); iter!=m_changeList.end(); ++iter) {
 					const eventInfo_t& item = *iter;
+
+					// remove first. This fails if there is none
+					epoll_ctl(m_epollfd, EPOLL_CTL_DEL, item.fd, NULL);
+					m_eventInfos.erase(item.fd);
+
 					if(item.eventHandler) {
 						// add
 						m_eventInfos[item.fd] = item;
@@ -69,10 +73,6 @@ namespace hbm {
 						if (epoll_ctl(m_epollfd, EPOLL_CTL_ADD, item.fd, &ev) == -1) {
 							syslog(LOG_ERR, "epoll_ctl failed %s", strerror(errno));
 						}
-					} else {
-						// remove
-						epoll_ctl(m_epollfd, EPOLL_CTL_DEL, item.fd, NULL);
-						m_eventInfos.erase(item.fd);
 					}
 				}
 				m_changeList.clear();
@@ -147,12 +147,6 @@ namespace hbm {
 							// we are working edge triggered, hence we need to read everything that is available
 							result = pEventInfo->eventHandler();
 						} while (result>0);
-//						if(result<0) {
-//							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
-//								// this event is removed from the event loop.
-//								eraseEvent(pEventInfo->fd);
-//							}
-//						}
 					}
 				}
 			}
@@ -205,12 +199,6 @@ namespace hbm {
 							result = pEventInfo->eventHandler();
 							// we are working edge triggered, hence we need to read everything that is available
 						} while (result>0);
-//						if(result<0) {
-//							if ((errno!=EAGAIN) && (errno!=EWOULDBLOCK)) {
-//								// this event is removed from the event loop.
-//								eraseEvent(pEventInfo->fd);
-//							}
-//						}
 					}
 				}
 			}

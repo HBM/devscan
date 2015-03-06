@@ -14,6 +14,7 @@ namespace hbm {
 		class EventLoop;
 
 		class Notifier {
+			typedef std::function < void () > Cb_t;
 		public:
 			/// \throws hbm::exception
 			Notifier(EventLoop& eventLoop);
@@ -21,7 +22,7 @@ namespace hbm {
 
 			virtual ~Notifier();
 
-			int set(EventHandler_t eventHandler);
+			int set(Cb_t eventHandler);
 
 			int notify();
 		private:
@@ -33,11 +34,9 @@ namespace hbm {
 			/// called by eventloop
 			int process();
 
-			int read();
-
 			event m_fd;
 			EventLoop& m_eventLoop;
-			EventHandler_t m_eventHandler;
+			Cb_t m_eventHandler;
 		};
 	}
 }

@@ -2,44 +2,32 @@
 // Distributed under MIT license
 // See file LICENSE provided
 
+#ifndef __HBM__COMMUNICATION_SOCKETTEST_H
+#define __HBM__COMMUNICATION_SOCKETTEST_H
 
-#ifndef __HBM__COMMUNICATION__SOCKETNONBLOCKING_TEST_H
-#define __HBM__COMMUNICATION__SOCKETNONBLOCKING_TEST_H
-
-//#ifndef _WIN32
-//#define BOOST_TEST_DYN_LINK
-//#endif
-//#define BOOST_TEST_MAIN
-
-//#define BOOST_TEST_MODULE socketnonblocking tests
-
-//#include <boost/test/unit_test.hpp>
-
-//#include <string>
 #include <thread>
-//#include <functional>
-#include <memory>
-
+#include <set>
 
 #include "hbm/communication/socketnonblocking.h"
-#include "hbm/communication/tcpacceptor.h"
+#include "hbm/communication/tcpserver.h"
+
 #include "hbm/sys/eventloop.h"
 
-#include <set>
 
 namespace hbm {
 	namespace communication {
 		namespace test {
 
-			struct serverFixture
-			{
+			class serverFixture {
 			public:
+				int clientReceive(hbm::communication::SocketNonblocking* pSocket);
+			protected:
 				serverFixture();
 				virtual ~serverFixture();
-
-				int clientReceive(hbm::communication::SocketNonblocking* pSocket);
-
-				void cleaAnswer()
+				void acceptCb(workerSocket_t worker);
+				int serverEcho(SocketNonblocking* pSocket);
+				void removeWorker(workerSocket_t worker);
+				void clearAnswer()
 				{
 					m_answer.clear();
 				}
@@ -50,18 +38,14 @@ namespace hbm {
 				}
 
 			private:
-				typedef std::set < TcpAcceptor::workerSocket_t > workers_t;
-				void acceptCb(TcpAcceptor::workerSocket_t worker);
-				int serverEcho(hbm::communication::SocketNonblocking* pSocket);
-
-				hbm::sys::EventLoop m_eventloop;
-				hbm::communication::TcpAcceptor m_acceptor;
-				workers_t m_workers;
-				std::thread m_server;
-
 				std::string m_answer;
+				std::set < workerSocket_t > m_workers;
+				std::thread m_serverWorker;
+				sys::EventLoop m_eventloop;
+				TcpServer m_server;
 			};
 		}
 	}
 }
+
 #endif

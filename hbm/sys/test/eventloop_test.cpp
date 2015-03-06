@@ -31,11 +31,25 @@ static ssize_t eventHandlerPrint()
 
 
 /// by returning error, the execute() method, that is doing the eventloop, exits
-static ssize_t eventHandlerIncrement(unsigned int* pValue)
+static ssize_t timerEventHandlerIncrement(bool fired, unsigned int& value, bool& canceled)
 {
-	++(*pValue);
+	if (fired) {
+		++value;
+		return 0;
+	} else {
+		canceled = true;
+	}
 	return 0;
 }
+
+/// by returning error, the execute() method, that is doing the eventloop, exits
+static ssize_t notifierEventHandlerIncrement(unsigned int& value)
+{
+	++value;
+	return 0;
+}
+
+
 
 
 
@@ -95,11 +109,10 @@ BOOST_AUTO_TEST_CASE(restart_test)
 BOOST_AUTO_TEST_CASE(notify_test)
 {
 	unsigned int value = 0;
-	int result;
 	static const std::chrono::milliseconds duration(100);
 	hbm::sys::EventLoop eventLoop;
 	hbm::sys::Notifier notifier(eventLoop);
-	notifier.set(std::bind(&eventHandlerIncrement, &value));
+	notifier.set(std::bind(&notifierEventHandlerIncrement, std::ref(value)));
 	BOOST_CHECK_EQUAL(value, 0);
 
 	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, &eventLoop));
@@ -108,6 +121,11 @@ BOOST_AUTO_TEST_CASE(notify_test)
 	static const unsigned int count = 10;
 	for(unsigned int i=0; i<count; ++i) {
 		notifier.notify();
+
+#ifdef _WIN32
+		/// this is important for windows. linux event_fd accumulates events windows is only able to signal one event.
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#endif
 	}
 
 
@@ -116,7 +134,6 @@ BOOST_AUTO_TEST_CASE(notify_test)
 	worker.join();
 
 	BOOST_CHECK_EQUAL(value, count);
-
 }
 
 BOOST_AUTO_TEST_CASE(oneshottimer_test)
@@ -127,9 +144,10 @@ BOOST_AUTO_TEST_CASE(oneshottimer_test)
 	hbm::sys::EventLoop eventLoop;
 
 	unsigned int counter = 0;
+	bool canceled = false;
 
 	hbm::sys::Timer timer(eventLoop);
-	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
+	timer.set(timerCycle, false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_EQUAL(counter, 1);
@@ -145,9 +163,10 @@ BOOST_AUTO_TEST_CASE(cyclictimer_test)
 	hbm::sys::EventLoop eventLoop;
 
 	unsigned int counter = 0;
+	bool canceled = false;
 
 	hbm::sys::Timer cyclicTimer(eventLoop);
-	cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
+	cyclicTimer.set(timerCycle, true, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
 
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_GE(counter, excpectedMinimum);
@@ -162,15 +181,17 @@ BOOST_AUTO_TEST_CASE(canceltimer_test)
 	hbm::sys::EventLoop eventLoop;
 
 	unsigned int counter = 0;
+	bool canceled = false;
 
 	hbm::sys::Timer timer(eventLoop);
-	timer.set(timerCycle, false, std::bind(&eventHandlerIncrement, &counter));
+	timer.set(timerCycle, false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
 
 	timer.cancel();
 
 	worker.join();
 
+	BOOST_CHECK_EQUAL(canceled, true);
 	BOOST_CHECK_EQUAL(counter, 0);
 }
 
@@ -182,12 +203,13 @@ BOOST_AUTO_TEST_CASE(removenotifier_test)
 	hbm::sys::EventLoop eventLoop;
 
 	unsigned int counter = 0;
+	bool canceled = false;
 	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute_for, std::ref(eventLoop), duration));
 
 	{
 		// leaving this scope leads to destruction of the timer and the removal from the event loop
 		hbm::sys::Timer cyclicTimer(eventLoop);
-		cyclicTimer.set(timerCycle, true, std::bind(&eventHandlerIncrement, &counter));
+		cyclicTimer.set(timerCycle, true, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
 		std::this_thread::sleep_for(std::chrono::milliseconds(timerCycle * timerCount / 2));
 	}
 

@@ -25,31 +25,32 @@ namespace hbm {
 		static VOID CALLBACK resetRunningFlag(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 		{
 			Timer* pTimer = reinterpret_cast < Timer* > (lpArgToCompletionRoutine);
+
 			pTimer->cancel();
 		}
 
 		Timer::Timer(EventLoop& eventLoop)
-			: m_fd(NULL)
+			: m_fd(CreateWaitableTimer(NULL, FALSE, NULL))
 			, m_eventLoop(eventLoop)
 			, m_eventHandler()
 			, m_isRunning(false)
 		{
+			cancel();
 		}
 
 		Timer::~Timer()
 		{
 			m_eventLoop.eraseEvent(m_fd);
 			CloseHandle(m_fd);
+			m_fd = INVALID_HANDLE_VALUE;
 		}
 
-		int Timer::set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler)
+		int Timer::set(unsigned int period_ms, bool repeated, Cb_t eventHandler)
 		{
 			LARGE_INTEGER dueTime;
 			static const int64_t multilpier = -10000; // negative because we want a relative time
 			LONG period = 0; // in ms
 
-			m_fd = CreateWaitableTimer(NULL, FALSE, NULL);
-			cancel();
 			m_eventHandler = eventHandler;
 			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 
@@ -74,37 +75,22 @@ namespace hbm {
 
 		int Timer::process()
 		{
-			int result = read();
-			if (result > 0) {
-				if (m_eventHandler) {
-					m_eventHandler();
-				}
-			}
-			return result;
-		}
-
-		int Timer::read()
-		{
-			DWORD result = WaitForSingleObject(m_fd, 0);
-			switch (result) {
-			case WAIT_OBJECT_0:
-				return 1;
-				break;
-			case WAIT_TIMEOUT:
-				return 0;
-				break;
-			default:
-				return -1;
-				break;
+			if (m_eventHandler) {
+				m_eventHandler(true);
 			}
 			return 0;
 		}
+
 
 		int Timer::cancel()
 		{
 			int result = 0;
 			if (m_isRunning) {
 				m_isRunning = false;
+				if (m_eventHandler) {
+					m_eventHandler(false);
+				}
+
 				result = 1;
 			}
 

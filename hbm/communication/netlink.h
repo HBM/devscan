@@ -18,6 +18,8 @@ namespace hbm {
 		Netlink(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs, sys::EventLoop &eventLoop);
 		virtual ~Netlink();
 
+		int start(sys::EventHandler_t eventHandler);
+
 		int stop();
 
 	private:
@@ -35,6 +37,7 @@ namespace hbm {
 		communication::MulticastServer &m_mcs;
 
 		sys::EventLoop& m_eventloop;
+		sys::EventHandler_t m_eventHandler;
 	};
 }
 

@@ -39,7 +39,6 @@ namespace hbm {
 		if (::bind(m_fd, reinterpret_cast < struct sockaddr *> (&netLinkAddr), sizeof(netLinkAddr))<0) {
 			throw hbm::exception::exception("could not bind netlink socket");
 		}
-		m_eventloop.addEvent(m_fd, std::bind(&Netlink::process, this));
 	}
 
 	Netlink::~Netlink()
@@ -136,10 +135,19 @@ namespace hbm {
 		ssize_t nBytes = receive(readBuffer, sizeof(readBuffer));
 		if (nBytes>0) {
 			processNetlinkTelegram(readBuffer, nBytes);
+			if(m_eventHandler) {
+				m_eventHandler();
+			}
 		}
 		return nBytes;
 	}
 
+	int Netlink::start(sys::EventHandler_t eventHandler)
+	{
+		m_eventHandler = eventHandler;
+		m_eventloop.addEvent(m_fd, std::bind(&Netlink::process, this));
+		return 0;
+	}
 
 	int Netlink::stop()
 	{

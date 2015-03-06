@@ -39,10 +39,14 @@ namespace hbm {
 			close(m_fd);
 		}
 
-		int Notifier::set(EventHandler_t eventHandler)
+		int Notifier::set(Cb_t eventHandler)
 		{
-			m_eventHandler =eventHandler;
-			m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
+			m_eventHandler = eventHandler;
+			if (eventHandler) {
+				m_eventLoop.addEvent(m_fd, std::bind(&Notifier::process, this));
+			} else {
+				m_eventLoop.eraseEvent(m_fd);
+			}
 			return 0;
 		}
 
@@ -65,19 +69,6 @@ namespace hbm {
 				}
 			}
 			return readStatus;
-		}
-
-		int Notifier::read()
-		{
-			uint64_t value;
-			ssize_t readStatus = ::read(m_fd, &value, sizeof(value));
-			if (readStatus<0) {
-				return 0;
-			} else {
-				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
-				return 1;
-			}
-
 		}
 	}
 }

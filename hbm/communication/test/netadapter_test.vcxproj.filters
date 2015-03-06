@@ -13,13 +13,19 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\test">
+      <UniqueIdentifier>{9df75f44-dbdd-47a6-9af5-e415169ab908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\communication">
+      <UniqueIdentifier>{52862bec-1ddf-48d2-93af-dc4c9165ea59}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="netadapter_test.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\test</Filter>
     </ClCompile>
     <ClCompile Include="..\netadapter.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\communication</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

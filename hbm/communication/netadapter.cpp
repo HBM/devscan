@@ -132,5 +132,38 @@ namespace hbm {
 
 			return true;
 		}
+
+		bool Netadapter::isValidIpV4Netmask(const std::string& ip)
+		{
+#ifdef _WIN32
+			unsigned long address = inet_addr(ip.c_str());
+
+			if (address == INADDR_NONE) {
+	#else
+			in_addr address;
+			if (inet_aton(ip.c_str(), &address) == 0) {
+	#endif
+				return false;
+			}
+
+#ifdef _WIN32
+			uint32_t bigAddress = htonl(address);
+#else
+			uint32_t bigAddress = htonl(address.s_addr);
+#endif
+
+			if (bigAddress==0){
+				// 0.0.0.0
+				return false;
+			} else if (bigAddress==0xffffffff) {
+				// 255.255.255.255
+				return false;
+			}
+
+			return true;
+		}
 	}
 }
+
+
+

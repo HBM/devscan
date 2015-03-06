@@ -5,6 +5,7 @@
 #ifndef __HBM__SOCKETNONBLOCKING_H
 #define __HBM__SOCKETNONBLOCKING_H
 
+#include <memory>
 #include <string>
 
 #ifdef _WIN32
@@ -24,6 +25,13 @@
 namespace hbm
 {
 	namespace communication {
+		class SocketNonblocking;
+#ifdef _MSC_VER
+		typedef std::shared_ptr <SocketNonblocking > workerSocket_t;
+#else
+		typedef std::unique_ptr <SocketNonblocking > workerSocket_t;
+#endif
+
 		/// the socke uses keep-alive in order to detect broken connection.
 		class SocketNonblocking
 		{
@@ -37,11 +45,12 @@ namespace hbm
 			virtual ~SocketNonblocking();
 
 			/// \return 0: success; -1: error
-			int connect(const std::string& address, const std::string& port, DataCb_t dataHandler);
-			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len, DataCb_t dataHandler);
+			int connect(const std::string& address, const std::string& port);
+			int connect(int domain, const struct sockaddr* pSockAddr, socklen_t len);
 
+			/// if setting a callback function, data receiption is done via event loop.
+			/// if setting an empty callback function DataCb_t(), the event is taken out of the eventloop.
 			void setDataCb(DataCb_t dataCb);
-			
 
 			ssize_t sendBlock(const void* pBlock, size_t len, bool more);
 

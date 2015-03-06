@@ -28,12 +28,12 @@ namespace hbm {
 			typedef std::unique_ptr <SocketNonblocking > workerSocket_t;
 			typedef std::function < void (workerSocket_t) > Cb_t;
 
-			TcpAcceptor(sys::EventLoop &eventLoop);
+			/// \param acceptCb called when accepting a new tcp client
+			/// \param workerDataHandler provided to the worker socket that is created for the connecting client
+			TcpAcceptor(sys::EventLoop &eventLoop, Cb_t acceptCb, SocketNonblocking::DataCb_t workerDataHandler);
 			virtual ~TcpAcceptor();
 
-			/// @param numPorts Maximum length of the queue of pending connections
-			/// \param acceptCb called when accepting a new tcp client
-			int start(uint16_t port, int backlog, Cb_t acceptCb);
+			int start(uint16_t port, int backlog);
 
 			void stop();
 
@@ -52,11 +52,10 @@ namespace hbm {
 			int bind(uint16_t Port);
 
 			/// Listens to connecting clients, a server call
-			/// @param numPorts Maximum length of the queue of pending connections
+			/// @param numPorts Maximum length of the queue of pending connections.
 			int listenToClient(int numPorts);
 
 			/// called by eventloop
-			/// accepts a new connection creates new worker socket anf calls acceptCb
 			int process();
 
 			/// accepts a new connecting client.
@@ -66,6 +65,7 @@ namespace hbm {
 			int m_listeningSocket;
 			sys::EventLoop& m_eventLoop;
 			Cb_t m_acceptCb;
+			SocketNonblocking::DataCb_t m_workerDataHandler;
 		};
 	}
 }

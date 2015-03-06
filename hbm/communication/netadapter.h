@@ -108,6 +108,8 @@ namespace hbm {
 
 			static bool isApipaAddress(const std::string& address);
 			static bool isValidManualIpV4Address(const std::string& ip);
+			static bool isValidIpV4Netmask(const std::string& ip);
+
 
 			std::string m_name;
 

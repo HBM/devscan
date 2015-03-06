@@ -43,10 +43,17 @@ namespace hbm {
 		Timer::~Timer()
 		{
 			m_eventLoop.eraseEvent(m_fd);
+			cancel();
 			close(m_fd);
 		}
 
-		int Timer::set(unsigned int period_ms, bool repeated, EventHandler_t eventHandler)
+		int Timer::set(std::chrono::milliseconds period, bool repeated, Cb_t eventHandler)
+		{
+			return set(period.count(), repeated, eventHandler);
+		}
+
+
+		int Timer::set(unsigned int period_ms, bool repeated, Cb_t eventHandler)
 		{
 			if (period_ms==0) {
 				return -1;
@@ -75,36 +82,29 @@ namespace hbm {
 			timerfd_gettime(m_fd, &timespec);
 			if ( (timespec.it_value.tv_sec != 0) || (timespec.it_value.tv_nsec != 0) ) {
 				// timer is running
+				if (m_eventHandler) {
+					m_eventHandler(false);
+				}
 				retval = 1;
 			}
 
 			memset (&timespec, 0, sizeof(timespec));
 			timerfd_settime(m_fd, 0, &timespec, nullptr);
 
+
 			return retval;
 		}
 
 		int Timer::process()
 		{
-			int result = read();
-			if (result>0) {
-				if (m_eventHandler) {
-					m_eventHandler();
-				}
-			}
-			return result;
-		}
-
-		int Timer::read()
-		{
 			uint64_t timerEventCount;
 			ssize_t readStatus = ::read(m_fd, &timerEventCount, sizeof(timerEventCount));
-			if (readStatus<0) {
-				return 0;
-			} else {
-				// to be compatible between windows and linux, we return 1 even if timer expired timerEventCount times.
-				return 1;
+			if (readStatus>0) {
+				if (m_eventHandler) {
+					m_eventHandler(true);
+				}
 			}
+			return readStatus;
 		}
 	}
 }

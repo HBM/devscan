@@ -29,6 +29,8 @@ namespace hbm {
 			/// \throws hbm::exception
 			EventLoop();
 			virtual ~EventLoop();
+
+			/// existing event handler of an fd will be replaced
 			void addEvent(event fd, EventHandler_t eventHandler);
 
 			void eraseEvent(event fd);

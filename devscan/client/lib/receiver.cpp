@@ -64,7 +64,7 @@ namespace hbm {
 		void Receiver::start()
 		{
 			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
-			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredTimerCb, std::ref(m_deviceMonitor), std::placeholders::_1));
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute();
 		}
@@ -73,7 +73,7 @@ namespace hbm {
 		void Receiver::start_for(std::chrono::milliseconds timeOfExecution)
 		{
 			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
-			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredAnnouncements, std::ref(m_deviceMonitor)));
+			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredTimerCb, std::ref(m_deviceMonitor), std::placeholders::_1));
 			m_scanner.addAllInterfaces();
 			m_eventloop.execute_for(timeOfExecution);
 		}
