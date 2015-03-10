@@ -13,10 +13,15 @@
 #include "devscan/receiver.h"
 
 
-void announceCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
+void announceCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router, const std::string& announcement)
 {
 
-	std::cout << "announcement: " << uuid << " destination interface: " << receivingInterfaceName << ", source interface: " << sendingInterfaceName << std::endl;
+	std::cout << "announcement: " << uuid;
+	if(router.empty()==false) {
+		std::cout <<", via router: " << router;
+	}
+	std::cout << std::endl;
+
 
 	// produce output that is structured
 	Json::Value val;
@@ -24,9 +29,13 @@ void announceCb(const std::string uuid, const std::string& receivingInterfaceNam
 	std::cout << Json::StyledWriter().write(val) << std::endl;
 }
 
-void expireCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName)
+void expireCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router)
 {
-	std::cout << "expired: " << uuid << " destination interface: " << receivingInterfaceName << ", source interface: " << sendingInterfaceName << std::endl;
+	std::cout << "expired: " << uuid;
+	if(router.empty()==false) {
+		std::cout <<", via router: " << router;
+	}
+	std::cout << std::endl;
 }
 
 int main(int argc, char* argv[])

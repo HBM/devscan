@@ -138,7 +138,8 @@ BOOST_AUTO_TEST_CASE(notify_test)
 
 BOOST_AUTO_TEST_CASE(oneshottimer_test)
 {
-	static const unsigned int timerCycle = 100;
+	static const std::chrono::milliseconds timerCycle(100);
+	static const std::chrono::milliseconds delta(10);
 	static const unsigned int timerCount = 10;
 	static const std::chrono::milliseconds duration(timerCycle * timerCount);
 	hbm::sys::EventLoop eventLoop;
@@ -152,6 +153,19 @@ BOOST_AUTO_TEST_CASE(oneshottimer_test)
 	int result = eventLoop.execute_for(duration);
 	BOOST_CHECK_EQUAL(counter, 1);
 	BOOST_CHECK_EQUAL(result, 0);
+
+
+	counter = 0;
+	std::thread worker = std::thread(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventLoop)));
+	timer.set(timerCycle, false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
+
+	std::this_thread::sleep_for(timerCycle+delta);
+	BOOST_CHECK_EQUAL(counter, 1);
+
+	timer.set(timerCycle, false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
+
+	std::this_thread::sleep_for(timerCycle+delta);
+	BOOST_CHECK_EQUAL(counter, 2);
 }
 
 BOOST_AUTO_TEST_CASE(cyclictimer_test)

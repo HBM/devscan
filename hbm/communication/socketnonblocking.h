@@ -67,6 +67,11 @@ namespace hbm
 
 			void disconnect();
 
+			int getFd()
+			{
+				return m_fd;
+			}
+
 		protected:
 			/// should not be copied
 			SocketNonblocking(const SocketNonblocking& op);

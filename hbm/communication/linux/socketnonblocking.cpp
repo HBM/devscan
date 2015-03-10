@@ -15,6 +15,7 @@
 #include <netdb.h>
 
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <errno.h>
 #include <syslog.h>
@@ -41,6 +42,9 @@ hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop 
 	, m_eventLoop(eventLoop)
 	, m_dataHandler()
 {
+	if (fcntl(m_fd, F_SETFL, O_NONBLOCK)==-1) {
+		throw std::runtime_error("error setting socket to non-blocking");
+	}
 	if (setSocketOptions()<0) {
 		throw std::runtime_error("error setting socket options");
 	}

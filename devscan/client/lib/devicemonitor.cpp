@@ -27,13 +27,14 @@ namespace hbm {
 		{
 			std::vector < std::string > tokens = hbm::string::split(communicationPath, ":");
 
-			if (tokens.size() != 3) {
+			if (tokens.size() != 4) {
 				throw std::runtime_error("invalid communication path");
 			}
 
 			receivingInterface = tokens[0];
 			sendingInterface = tokens[1];
 			uuid = tokens[2];
+			router = tokens[3];
 		}
 
 		DeviceMonitor::DeviceMonitor()
@@ -51,7 +52,7 @@ namespace hbm {
 				for (announcements_t::iterator iter=m_announcements.begin(); iter!=m_announcements.end(); ++iter) {
 					try {
 						communicationPath path(iter->first);
-						m_announceCb(path.uuid, path.receivingInterface, path.sendingInterface, iter->second.announcement);
+						m_announceCb(path.uuid, path.receivingInterface, path.sendingInterface, path.router, iter->second.announcement);
 					} catch(...)
 					{
 					}
@@ -83,7 +84,7 @@ namespace hbm {
 			}
 		}
 
-		void DeviceMonitor::processReceivedAnnouncement(std::string interfaceName, const std::string &message)
+		void DeviceMonitor::processReceivedAnnouncement(std::string receivingInterfaceName, const std::string &message)
 		{
 			Json::Value announcement;
 
@@ -96,28 +97,27 @@ namespace hbm {
 					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_METHOD, "Missing \"announcement\" in JSON-document", message);
 					return;
 				}
+
+				const Json::Value& params = announcement[hbm::jsonrpc::PARAMS];
+
 				// this is an announcement!
-				const Json::Value& ipV4Node = announcement[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4];
-				if (ipV4Node.empty()) {
-					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_IPADDR, "Missing ip-address in JSON-document", message);
+				std::string sendingInterfaceName = params[TAG_NetSettings][TAG_Interface][TAG_Name].asString();
+				if (sendingInterfaceName.empty()) {
+					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_IPADDR, "Missing interface name in JSON-document", message);
 					return;
 				}
 
-				// it would be better to use the ipv6 link local address here. As long our ip over firewire driver for windows does not support ipv6 we have to use the ipv4 address.
-				std::string sendingInterfaceAddress(ipV4Node[0][TAG_address].asString());
-				if (sendingInterfaceAddress.size() == 0) {
-					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_IPADDR, "Missing ip-address in JSON-document", message);
-					return;
-				}
-				std::string sendingUuid(announcement[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid].asString());
-				if (sendingUuid.size() == 0) {
+				std::string sendingUuid(params[TAG_Device][TAG_Uuid].asString());
+				if (sendingUuid.empty()) {
 					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_UUID, "Missing uuid in JSON-document", message);
 					return;
 				}
-				std::string key(interfaceName+":"+sendingInterfaceAddress+":"+sendingUuid);
+
+				std::string router(params[TAG_Router][TAG_Uuid].asString());
+				std::string key(receivingInterfaceName+":"+sendingInterfaceName+":"+sendingUuid+":"+router);
 
 				std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-				std::chrono::seconds expire(announcement[hbm::jsonrpc::PARAMS][TAG_Expiration].asUInt());
+				std::chrono::seconds expire(params[TAG_Expiration].asUInt());
 				if (expire.count() == 0 ) {
 					callErrorCb(cb_t::DATA_DROPPED | cb_t::ERROR_EXPIRE, "Missing expiration in JSON-document", message);
 					return;
@@ -134,7 +134,7 @@ namespace hbm {
 						// something has changed
 						currentEntry.announcement = message;
 						if (m_announceCb) {
-							m_announceCb(sendingUuid, interfaceName, sendingInterfaceAddress, message);
+							m_announceCb(sendingUuid, receivingInterfaceName, sendingInterfaceName, router, message);
 						}
 					}
 				} else {
@@ -144,7 +144,7 @@ namespace hbm {
 					entry.timeOfExpiry = now + expire;
 					m_announcements[key] = entry;
 					if (m_announceCb) {
-						m_announceCb(sendingUuid, interfaceName, sendingInterfaceAddress, message);
+						m_announceCb(sendingUuid, receivingInterfaceName, sendingInterfaceName, router, message);
 					}
 				}
 			}
@@ -175,7 +175,7 @@ namespace hbm {
 					if (m_expireCb) {
 						try {
 							communicationPath path(iter->first);
-							m_expireCb(path.uuid, path.receivingInterface, path.sendingInterface);
+							m_expireCb(path.uuid, path.receivingInterface, path.sendingInterface, path.router);
 						} catch(...)
 						{
 						}

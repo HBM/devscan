@@ -63,8 +63,8 @@ namespace hbm {
 			};
 
 			/// each announcement can be uniquely identified by the so called communication path.
-			/// The communication path is made up of the uuid of the sending device, the address of the sending interface and the name of the receiving interface
-			/// We choose the interface name instead of interface address because an interface might have several or no IP addresses, which is no problem for multicast communication.
+			/// The communication path is made up of the uuid of the sending device, the name of the sending interface, the name of the receiving interface and the routing device
+			/// We choose the interface names instead of interface addresses because an interface might have several or no IP addresses.
 			struct communicationPath {
 				/// \throws on invalid communication path
 				communicationPath(const std::string &communicationPath);
@@ -72,6 +72,7 @@ namespace hbm {
 				std::string receivingInterface;
 				std::string uuid;
 				std::string sendingInterface;
+				std::string router;
 			};
 
 			/// objects must not be copied
@@ -80,7 +81,7 @@ namespace hbm {
 			/// objects must not be assigned
 			DeviceMonitor& operator=(const DeviceMonitor& op);
 
-			/// communication path (<receiving interface name>:<sending interface address>:<uuid of sender>) is key
+			/// communication path (<receiving interface name>:<sending interface name>:<uuid of sender>:<uuid of router empty for none>) is key
 			typedef std::unordered_map < std::string, expiringEntry > announcements_t;
 
 			/// we keep all current announcements in order to detect changed announcements.

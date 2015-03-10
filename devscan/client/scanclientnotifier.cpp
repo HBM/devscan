@@ -20,11 +20,12 @@ using namespace hbm::devscan;
 
 
 /// called on new or changed announcment
-void announceCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
+void announceCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router, const std::string& announcement)
 {
-	std::cout << "announcement: " << std::setw(16) << std::left << uuid
-			  << " " << std::setw(5) << std::left << receivingInterfaceName
-			  << " " << std::setw(15) << std::left << sendingInterfaceName;
+	std::cout << "announcement: " << std::setw(16) << std::left << uuid;
+	if(router.empty()==false) {
+		std::cout << " via router: " << std::setw(16) << std::left << uuid;
+	}
 
 	Json::Value announcementDoc;
 	if(Json::Reader().parse(announcement, announcementDoc)) {
@@ -64,12 +65,12 @@ void announceCb(const std::string uuid, const std::string& receivingInterfaceNam
 }
 
 /// called on exipry of an announcement
-void expireCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
+void expireCb(const std::string uuid, const std::string& receivingInterfaceName, const std::string& router, const std::string& sendingIpAddress)
 {
-	std::cout << "expired:      " << std::setw(16) << std::left << uuid
-			  << " " << std::setw(5) << std::left << receivingInterfaceName
-			  << " " << std::setw(15) << std::left << sendingIpAddress
-			  << std::endl;
+	std::cout << "expired:      " << std::setw(16) << std::left << uuid;
+	if(router.empty()==false) {
+		std::cout << " via router: " << std::setw(16) << std::left << uuid;
+	}
 
 }
 

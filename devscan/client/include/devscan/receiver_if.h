@@ -105,11 +105,11 @@ namespace hbm {
 		/// \param receivingInterfaceName  the name of the host's network adapter
 		///                                receiving the announcement network message,
 		///                                on Linux for example: eth0
-		/// \param sendingInterfaceAddress
+		/// \param sendingInterfaceName
 		/// \param announcement  the received network message, as a string
 		/// \see ReceiverIf::setAnnounceCb()
 		/// \see expireCb_t
-		typedef std::function < void (const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceAddress, const std::string& announcement) > announceCb_t;
+		typedef std::function < void (const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router, const std::string& announcement) > announceCb_t;
 
 		/// \typedef expireCb_t
 		/// \brief Typedef for the user provided callback function which is called once a previously discovered device disappears.
@@ -122,10 +122,10 @@ namespace hbm {
 		/// \param receivingInterfaceName  The name of the host's network adapter
 		///                                receiving the announcement network message,
 		///                                on Linux for example: eth0
-		/// \param sendingInterfaceAddress
+		/// \param sendingInterfaceName
 		/// \see ReceiverIf::setExpireCb()
 		/// \see announceCb_t
-		typedef std::function < void (const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceAddress) > expireCb_t;
+		typedef std::function < void (const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router) > expireCb_t;
 
 
 		/// \struct cb_t
@@ -230,7 +230,9 @@ namespace hbm {
 			virtual void stop() = 0;
 
 		protected:
-			virtual ~ReceiverIf() {};
+			virtual ~ReceiverIf()
+			{
+			}
 		};
 	}
 }
