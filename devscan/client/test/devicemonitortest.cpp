@@ -60,24 +60,26 @@ namespace hbm {
 				DeviceMonitor m_deviceMonitor;
 
 
-				static unsigned int  countAnnouncement;
-				static std::string   lastAnnouncedUuid;
-				static std::string   lastReceivingInterfaceName;
-				static std::string   lastAnnouncement;
+                          static unsigned int  countAnnouncement;
+                          static std::string   lastAnnouncedUuid;
+                          static std::string   lastReceivingInterfaceName;
+                          static std::string   lastRouter;
+                          static std::string   lastAnnouncement;
 
 				/// called on new or changed announcement
-				static void announceCbTest(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
+                          static void announceCbTest(const std::string& uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router, const std::string& announcement)
 				{
 					BOOST_TEST_MESSAGE("announceCb called");
 					countAnnouncement++;
 					lastAnnouncedUuid = uuid;
 					lastReceivingInterfaceName = receivingInterfaceName;
+                                        lastRouter = router;
 					lastAnnouncement = announcement;
 	//				std::cerr << "LOG: announceCb called" << std::endl ;
 				}
 
 				/// \throws (int)0
-				static void announceCbThrows(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& announcement)
+				static void announceCbThrows(const std::string& uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router, const std::string& announcement)
 				{
 					throw 0;
 				}
@@ -86,15 +88,15 @@ namespace hbm {
 				static std::string   lastExpiredUuid;
 
 				/// called on exipry of an announcement
-				static void expireCbTest(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
+				static void expireCbTest(const std::string& uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router)
 				{
 					countExpiration++;
 					lastExpiredUuid = uuid;
-					std::cerr << "expired: " << uuid << " " << receivingInterfaceName << " " << sendingIpAddress << std::endl;
+					std::cerr << "expired: " << uuid << " " << receivingInterfaceName << " " << sendingInterfaceName << std::endl;
 				}
 
 				/// \throws (const char*)0
-				static void expireCbThrows(const std::string uuid, const std::string& receivingInterfaceName, const std::string& sendingIpAddress)
+				static void expireCbThrows(const std::string& uuid, const std::string& receivingInterfaceName, const std::string& sendingInterfaceName, const std::string& router)
 				{
 					throw (const char*)0;
 				}
@@ -170,6 +172,7 @@ namespace hbm {
 			unsigned int  FixtureDeviceMonitor::countAnnouncement;
 			std::string   FixtureDeviceMonitor::lastAnnouncedUuid;
 			std::string   FixtureDeviceMonitor::lastReceivingInterfaceName;
+			std::string   FixtureDeviceMonitor::lastRouter;
 			std::string   FixtureDeviceMonitor::lastAnnouncement;
 
 			unsigned int  FixtureDeviceMonitor::countExpiration;
