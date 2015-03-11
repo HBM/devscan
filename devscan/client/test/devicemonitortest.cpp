@@ -132,7 +132,7 @@ namespace hbm {
 				/// \param uuid  Set to NULL to omit the corresponding json-node
 				/// \param ipaddress  Set to NULL to omit the corresponding json-node
 				/// \return The composed json-message
-				static Json::Value getJsonAnnouncement(unsigned int expiration, const char * const uuid, const char * const ipaddress)
+				static Json::Value getJsonAnnouncement(unsigned int expiration, const char * const uuid, const char * const interfaceName)
 				{
 					Json::Value jsonAnnouncement;
 					jsonAnnouncement[hbm::jsonrpc::METHOD]  = TAG_Announce;
@@ -144,9 +144,9 @@ namespace hbm {
 					{
 						jsonAnnouncement[hbm::jsonrpc::PARAMS][TAG_Device][TAG_Uuid] = uuid;
 					}
-					if(ipaddress)
+					if(interfaceName)
 					{
-						jsonAnnouncement[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_ipV4][0][TAG_address] = ipaddress;
+						jsonAnnouncement[hbm::jsonrpc::PARAMS][TAG_NetSettings][TAG_Interface][TAG_Name] = interfaceName;
 					}
 
 					return jsonAnnouncement;
@@ -181,37 +181,30 @@ namespace hbm {
 			unsigned int  FixtureDeviceMonitor::countErrors;
 			uint32_t      FixtureDeviceMonitor::lastErrorCode;
 
-
 			const std::string FixtureDeviceMonitor::minimalMessage =
-				  "{"
+				"{"
 					"\"method\":\"announce\","  // mandatory
 					"\"params\":"
 					"{"
-					  "\"device\":"
-					  "{"
-						"\"uuid\":\"0009E5111111\""  // mandatory (for key)
-					  "},"
-					  "\"expiration\":15,"  // mandatory
-					  "\"netSettings\":"
-					  "{"
-						"\"interface\":"
+						"\"device\":"
 						"{"
-						  "\"ipv4\":"  // mandatory
-						  "["
+							"\"uuid\":\"0009E5111111\""  // mandatory (for key)
+						"},"
+						"\"expiration\":15,"  // mandatory
+						"\"netSettings\":"
+						"{"
+							"\"interface\":"
 							"{"
-							  "\"address\":\"100.100.100.100\","  // mandatory (for key), sendingInterfaceAddress
-							  "\"netmask\":\"255.255.0.0\""
+								"\"name\":\"eth0\""  // mandatory (for key), sendingInterfaceName
 							"}"
-						  "]"
 						"}"
-					  "}"
 					"}"
-				  "}"
+				"}"
 				"\n";
 
 
 			const std::string FixtureDeviceMonitor::validMessage =
-				  "{"
+				"{"
 					"\"jsonrpc\":\"2.0\","
 					"\"method\":\"announce\","  // mandatory
 					"\"params\":"
@@ -239,7 +232,7 @@ namespace hbm {
 						  "\"ipv4\":"  // mandatory
 						  "["
 							"{"
-							  "\"address\":\"172.19.191.121\","  // mandatory (for key), sendingInterfaceAddress
+								"\"address\":\"172.19.191.121\","
 							  "\"netmask\":\"255.255.0.0\""
 							"},"
 							"{\"address\":\"169.254.80.58\",\"netmask\":\"255.255.0.0\"}"
@@ -248,7 +241,8 @@ namespace hbm {
 						  "["
 							"{\"address\":\"fe80::209:e5ff:fe00:13c4\",\"prefix\":64}"
 						  "],"
-						  "\"name\":\"eth1\",\"type\":\"ethernet\""
+							"\"name\":\"eth1\","   // mandatory (for key), sendingInterfaceName
+							"\"type\":\"ethernet\""
 						"}"
 					  "},"
 					  "\"router\":"
@@ -261,7 +255,7 @@ namespace hbm {
 						"{\"port\":50325,\"type\":\"jetws\"},{\"port\":50326,\"type\":\"ssh\"}"
 					  "]"
 					"}"
-				  "}"
+				"}"
 				"\n";
 
 
@@ -410,27 +404,27 @@ namespace hbm {
 				std::string message;
 
 				// Test with a valid message first
-				message = getJsonAnnouncementString(15, "112233445566", "1.2.3.4");
+				message = getJsonAnnouncementString(15, "112233445566", "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 1);
 				BOOST_CHECK_EQUAL(lastAnnouncement, message);
 				BOOST_CHECK_EQUAL(countErrors, 0);
 
 				// omit expiration:  announcement callback will not be called
-				message = getJsonAnnouncementString(-999, "112233445566", "1.2.3.4");
+				message = getJsonAnnouncementString(-999, "112233445566", "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 1);
 				BOOST_CHECK_EQUAL(countErrors, ++errorcount);
 				BOOST_CHECK_EQUAL(lastErrorCode, cb_t::DATA_DROPPED | cb_t::ERROR_EXPIRE);
 
 				// omit uuid:  announcement callback will not be called
-				message = getJsonAnnouncementString(20, NULL, "1.2.3.4");
+				message = getJsonAnnouncementString(20, NULL, "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 1);
 				BOOST_CHECK_EQUAL(countErrors, ++errorcount);
 				BOOST_CHECK_EQUAL(lastErrorCode, cb_t::DATA_DROPPED | cb_t::ERROR_UUID);
 
-				// omit ip-address:  announcement callback will not be called
+				// omit interface name:  announcement callback will not be called
 				message = getJsonAnnouncementString(20, "112233445566", NULL);
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 1);
@@ -514,21 +508,21 @@ namespace hbm {
 				// insert announcements "out of any order"
 
 				// select an expiration time of 3 seconds
-				message = getJsonAnnouncementString(3, uuid3, "1.1.1.3");
+				message = getJsonAnnouncementString(3, uuid3, "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 1);
 				BOOST_CHECK_EQUAL(lastAnnouncedUuid, uuid3);
 				BOOST_CHECK_EQUAL(lastAnnouncement, message);
 
 				// select an expiration time of 1 seconds
-				message = getJsonAnnouncementString(1, uuid1, "1.1.1.1");
+				message = getJsonAnnouncementString(1, uuid1, "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 2);
 				BOOST_CHECK_EQUAL(lastAnnouncedUuid, uuid1);
 				BOOST_CHECK_EQUAL(lastAnnouncement, message);
 
 				// select an expiration time of 5 seconds
-				message = getJsonAnnouncementString(5, uuid5, "1.1.1.5");
+				message = getJsonAnnouncementString(5, uuid5, "eth0");
 				m_deviceMonitor.processReceivedAnnouncement("eth_test", message);
 				BOOST_CHECK_EQUAL(countAnnouncement, 3);
 				BOOST_CHECK_EQUAL(lastAnnouncedUuid, uuid5);
