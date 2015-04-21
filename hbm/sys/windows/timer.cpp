@@ -22,12 +22,12 @@ namespace hbm {
 		//	_In_     DWORD dwTimerHighValue
 		//	);
 
-		static VOID CALLBACK resetRunningFlag(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
-		{
-			Timer* pTimer = reinterpret_cast < Timer* > (lpArgToCompletionRoutine);
+		//static VOID CALLBACK resetRunningFlag(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
+		//{
+		//	Timer* pTimer = reinterpret_cast < Timer* > (lpArgToCompletionRoutine);
 
-			pTimer->cancel();
-		}
+		//	pTimer->cancel();
+		//}
 
 		Timer::Timer(EventLoop& eventLoop)
 			: m_fd(CreateWaitableTimer(NULL, FALSE, NULL))
@@ -57,6 +57,7 @@ namespace hbm {
 			LONG period = 0; // in ms
 
 			m_eventHandler = eventHandler;
+
 			m_eventLoop.addEvent(m_fd, std::bind(&Timer::process, this));
 
 			if (repeated) {
@@ -67,7 +68,8 @@ namespace hbm {
 				m_fd,
 				&dueTime,
 				period,
-				&resetRunningFlag,
+				NULL,
+				//&resetRunningFlag,
 				this,
 				FALSE
 				);
@@ -90,10 +92,16 @@ namespace hbm {
 		int Timer::cancel()
 		{
 			int result = 0;
+
+			// Before calling callback function with fired=false, we need to clear the callback routine. 
+			// Otherwise a recursive call might happen
+			Cb_t originalEventHandler = m_eventHandler;
+			m_eventHandler = Cb_t();
+
 			if (m_isRunning) {
 				m_isRunning = false;
-				if (m_eventHandler) {
-					m_eventHandler(false);
+				if (originalEventHandler) {
+					originalEventHandler(false);
 				}
 
 				result = 1;

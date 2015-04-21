@@ -22,6 +22,9 @@
     <Filter Include="Source Files\communication">
       <UniqueIdentifier>{721ab608-90f3-4ed9-a7bd-a2b6c1d42792}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\communication\windows">
+      <UniqueIdentifier>{ac2ea498-5de6-4a71-a792-a3a47f0ba08d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="socketnonblocking_test.cpp">
@@ -30,14 +33,14 @@
     <ClCompile Include="..\bufferedreader.cpp">
       <Filter>Source Files\communication</Filter>
     </ClCompile>
-    <ClCompile Include="..\windows\socketnonblocking.cpp">
-      <Filter>Source Files\communication</Filter>
-    </ClCompile>
-    <ClCompile Include="..\windows\tcpacceptor.cpp">
-      <Filter>Source Files\communication</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\sys\windows\eventloop.cpp">
       <Filter>Source Files\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\windows\socketnonblocking.cpp">
+      <Filter>Source Files\communication\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\windows\tcpserver.cpp">
+      <Filter>Source Files\communication\windows</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

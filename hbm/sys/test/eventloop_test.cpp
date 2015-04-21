@@ -23,30 +23,26 @@
 #include "hbm/exception/exception.hpp"
 
 
-static ssize_t eventHandlerPrint()
+static void eventHandlerPrint()
 {
 	std::cout << __FUNCTION__ << std::endl;
-	return 0;
 }
 
 
 /// by returning error, the execute() method, that is doing the eventloop, exits
-static ssize_t timerEventHandlerIncrement(bool fired, unsigned int& value, bool& canceled)
+static void timerEventHandlerIncrement(bool fired, unsigned int& value, bool& canceled)
 {
 	if (fired) {
 		++value;
-		return 0;
 	} else {
 		canceled = true;
 	}
-	return 0;
 }
 
 /// by returning error, the execute() method, that is doing the eventloop, exits
-static ssize_t notifierEventHandlerIncrement(unsigned int& value)
+static void notifierEventHandlerIncrement(unsigned int& value)
 {
 	++value;
-	return 0;
 }
 
 
@@ -105,6 +101,8 @@ BOOST_AUTO_TEST_CASE(restart_test)
 		BOOST_CHECK_GE(delta.count(), duration.count()-3);
 	}
 }
+
+
 
 BOOST_AUTO_TEST_CASE(notify_test)
 {
@@ -166,6 +164,9 @@ BOOST_AUTO_TEST_CASE(oneshottimer_test)
 
 	std::this_thread::sleep_for(timerCycle+delta);
 	BOOST_CHECK_EQUAL(counter, 2);
+
+	eventLoop.stop();
+	worker.join();
 }
 
 BOOST_AUTO_TEST_CASE(cyclictimer_test)
@@ -208,6 +209,35 @@ BOOST_AUTO_TEST_CASE(canceltimer_test)
 	BOOST_CHECK_EQUAL(canceled, true);
 	BOOST_CHECK_EQUAL(counter, 0);
 }
+
+BOOST_AUTO_TEST_CASE(restart_timer_test)
+{
+	hbm::sys::EventLoop eventLoop;
+
+	static const std::chrono::milliseconds duration(100);
+
+	unsigned int counter = 0;
+	bool canceled = false;
+
+	std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventLoop)));
+	hbm::sys::Timer timer(eventLoop);
+
+	timer.set(std::chrono::milliseconds(duration), false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
+	std::this_thread::sleep_for(duration / 2);
+	timer.set(std::chrono::milliseconds(duration), false, std::bind(&timerEventHandlerIncrement, std::placeholders::_1, std::ref(counter), std::ref(canceled)));
+	std::this_thread::sleep_for(duration * 2);
+
+	BOOST_CHECK_EQUAL(canceled, true);
+	BOOST_CHECK_EQUAL(counter, 1);
+
+
+	eventLoop.stop();
+	worker.join();
+
+
+}
+
+
 
 BOOST_AUTO_TEST_CASE(removenotifier_test)
 {

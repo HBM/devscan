@@ -32,7 +32,6 @@
 #endif
 
 #include "hbm/exception/exception.hpp"
-#include "hbm/sys/defines.h"
 #include "hbm/sys/eventloop.h"
 
 #include "multicastserver.h"

@@ -4,25 +4,25 @@
     <ClCompile Include="devicemonitor.cpp" />
     <ClCompile Include="receiver.cpp" />
     <ClCompile Include="configureclient.cpp" />
-    <ClCompile Include="..\..\..\hbm\sys\windows\eventloop.cpp">
+    <ClCompile Include="..\..\hbm\sys\windows\eventloop.cpp">
       <Filter>hbm\sys\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\sys\windows\timer.cpp">
+    <ClCompile Include="..\..\hbm\sys\windows\timer.cpp">
       <Filter>hbm\sys\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\communication\multicastserver.cpp">
+    <ClCompile Include="..\..\hbm\communication\multicastserver.cpp">
       <Filter>hbm\communication</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\communication\netadapter.cpp">
+    <ClCompile Include="..\..\hbm\communication\netadapter.cpp">
       <Filter>hbm\communication</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\communication\netadapterlist.cpp">
+    <ClCompile Include="..\..\hbm\communication\netadapterlist.cpp">
       <Filter>hbm\communication</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\sys\windows\notifier.cpp">
+    <ClCompile Include="..\..\hbm\sys\windows\notifier.cpp">
       <Filter>hbm\sys\windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\hbm\string\split.cpp">
+    <ClCompile Include="..\..\hbm\string\split.cpp">
       <Filter>hbm\string</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,16 +50,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\common\JsonNames.h">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\exception\exception.hpp">
-      <Filter>common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\hbm\sys\eventloop.h">
+    <ClInclude Include="..\..\hbm\sys\eventloop.h">
       <Filter>hbm\sys</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\hbm\sys\timer.h">
+    <ClInclude Include="..\..\hbm\sys\timer.h">
       <Filter>hbm\sys</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,17 +7,19 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #ifdef _WIN32
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #undef max
 #undef min
+#ifndef ssize_t
+typedef int ssize_t;
+#endif
 #else
 #include <sys/socket.h>
 #endif
-
-
 
 #include "hbm/communication/bufferedreader.h"
 #include "hbm/sys/eventloop.h"
@@ -25,6 +27,19 @@
 namespace hbm
 {
 	namespace communication {
+		struct dataBlock_t {
+			dataBlock_t(const void* pD, size_t s)
+				: pData(pD)
+				, size(s)
+			{
+			}
+
+			const void* pData;
+			size_t size;
+		};
+
+		typedef std::list < dataBlock_t > dataBlocks_t;
+
 		class SocketNonblocking;
 #ifdef _MSC_VER
 		typedef std::shared_ptr <SocketNonblocking > workerSocket_t;
@@ -37,9 +52,10 @@ namespace hbm
 		{
 		public:
 			/// called on the arrival of data
-			typedef std::function < int (SocketNonblocking* pSocket) > DataCb_t;
+			typedef std::function < ssize_t (SocketNonblocking* pSocket) > DataCb_t;
 			SocketNonblocking(sys::EventLoop &eventLoop);
 
+			/// used when accepting connection via tcp server.
 			/// \throw std::runtime_error on error
 			SocketNonblocking(int fd, sys::EventLoop &eventLoop);
 			virtual ~SocketNonblocking();
@@ -52,6 +68,7 @@ namespace hbm
 			/// if setting an empty callback function DataCb_t(), the event is taken out of the eventloop.
 			void setDataCb(DataCb_t dataCb);
 
+			ssize_t sendBlocks(const dataBlocks_t& blocks);
 			ssize_t sendBlock(const void* pBlock, size_t len, bool more);
 
 			/// might return with less bytes the requested

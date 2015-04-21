@@ -1,30 +1,9 @@
-project("hbm_scan_client_lib" CXX)
-
-cmake_minimum_required(VERSION 2.8)
-
-option(WITH_CPPCHECK "CppCheck" OFF)
-
-SET(CMAKE_CXX_FLAGS "-std=c++0x" CACHE STRING "" FORCE)
-
-if(WITH_CPPCHECK)
-  find_package(cppcheck)
-  include(CppcheckTargets)
+include_directories(..)
+#include_directories(../../..)
+if(JSONCPP_FOUND)
+  include_directories(${JSONCPP_INCLUDE_DIRS})
 endif()
 
-message(STATUS "-----------------------------------------------------------")
-message(STATUS "CppCheck            : " ${WITH_CPPCHECK})
-message(STATUS "-----------------------------------------------------------")
-
-# find_package(Boost COMPONENTS)
-
-# if(Boost_FOUND)
-#   include_directories(${Boost_INCLUDE_DIRS})
-# endif(Boost_FOUND)
-
-
-include_directories(../..)
-include_directories(../../..)
-include_directories(../../../jsoncpp/include)
 set( INTERFACE_INCLUDE_DIR ../include/devscan)
 
 include_directories(${INTERFACE_INCLUDE_DIR})
@@ -32,8 +11,8 @@ include_directories(${INTERFACE_INCLUDE_DIR})
 SET( INTERFADE_HEADERS
     ${INTERFACE_INCLUDE_DIR}/configureclient.h
     ${INTERFACE_INCLUDE_DIR}/devicemonitor.h
-	${INTERFACE_INCLUDE_DIR}/receiver.h
-	${INTERFACE_INCLUDE_DIR}/receiver_if.h
+    ${INTERFACE_INCLUDE_DIR}/receiver.h
+    ${INTERFACE_INCLUDE_DIR}/receiver_if.h
 )
 
 
@@ -83,4 +62,3 @@ add_library(scanclient-static STATIC ${SOURCES_SCANCLIENT})
 if(GCOV_PACKAGE)
   SET_SOURCE_FILES_PROPERTIES(${SOURCES_SCANCLIENT_OWN} PROPERTIES COMPILE_FLAGS "--coverage")
 endif()
-

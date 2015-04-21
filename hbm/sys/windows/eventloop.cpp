@@ -42,7 +42,7 @@ namespace hbm {
 		int EventLoop::changeHandler()
 		{
 			{
-				std::lock_guard < std::mutex > lock(m_changeListMtx);
+				std::lock_guard < std::recursive_mutex > lock(m_changeListMtx);
 				for (changelist_t::const_iterator iter = m_changeList.begin(); iter != m_changeList.end(); ++iter) {
 					const eventInfo_t& item = *iter;
 					if (item.eventHandler) {
@@ -75,7 +75,7 @@ namespace hbm {
 			evi.fd = fd;
 			evi.eventHandler = eventHandler;
 			{
-				std::lock_guard < std::mutex> lock(m_changeListMtx);
+				std::lock_guard < std::recursive_mutex> lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 			}
 			SetEvent(m_changeFd);
@@ -87,7 +87,7 @@ namespace hbm {
 			evi.fd = fd;
 			evi.eventHandler = EventHandler_t();
 			{
-				std::lock_guard < std::mutex> lock(m_changeListMtx);
+				std::lock_guard < std::recursive_mutex> lock(m_changeListMtx);
 				m_changeList.push_back(evi);
 			}
 			SetEvent(m_changeFd);
@@ -126,6 +126,7 @@ namespace hbm {
 					if (lastError != ERROR_INVALID_HANDLE) {
 						return -1;
 					}
+					changeHandler();
 				} else if (dwEvent == WAIT_TIMEOUT) {
 					// stop because of timeout
 					return 0;

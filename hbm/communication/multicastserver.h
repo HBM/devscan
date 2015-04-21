@@ -45,7 +45,7 @@ namespace hbm {
 		class MulticastServer
 		{
 		public:
-			typedef std::function < int (MulticastServer* mcs) > DataHandler_t;
+			typedef std::function < ssize_t (MulticastServer* mcs) > DataHandler_t;
 
 			/// @param address the multicast group
 			MulticastServer(NetadapterList& netadapterList, sys::EventLoop &eventLoop);

@@ -58,6 +58,7 @@ namespace hbm {
 			if (period_ms==0) {
 				return -1;
 			}
+
 			struct itimerspec timespec;
 			memset (&timespec, 0, sizeof(timespec));
 			unsigned int period_s = period_ms / 1000;
@@ -70,7 +71,6 @@ namespace hbm {
 				timespec.it_interval.tv_nsec = rest * 1000 * 1000;
 			}
 			m_eventHandler = eventHandler;
-
 			return timerfd_settime(m_fd, 0, &timespec, nullptr);
 		}
 
@@ -79,18 +79,21 @@ namespace hbm {
 			int retval = 0;
 			struct itimerspec timespec;
 
+			// Before calling callback function with fired=false, we need to clear the callback routine. Otherwise a recursive call might happen
+			Cb_t originalEventHandler = m_eventHandler;
+			m_eventHandler = Cb_t();
+
 			timerfd_gettime(m_fd, &timespec);
 			if ( (timespec.it_value.tv_sec != 0) || (timespec.it_value.tv_nsec != 0) ) {
 				// timer is running
-				if (m_eventHandler) {
-					m_eventHandler(false);
+				if (originalEventHandler) {
+					originalEventHandler(false);
 				}
 				retval = 1;
 			}
 
 			memset (&timespec, 0, sizeof(timespec));
 			timerfd_settime(m_fd, 0, &timespec, nullptr);
-
 
 			return retval;
 		}

@@ -80,7 +80,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../..;../include/devscan;../../..;../../../jsoncpp/include;$(BOOST_1_57)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;../include/devscan;../..;../../jsoncpp/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SCANCLIENT_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -105,7 +105,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../..;../include/devscan;../../..;../../../jsoncpp/include;$(BOOST_1_57)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;../include/devscan;../..;../../jsoncpp/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SCANCLIENT_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -126,7 +126,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../..;../include/devscan;../../..;../../../jsoncpp/include;$(BOOST_1_57)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;../include/devscan;../..;../../jsoncpp/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SCANCLIENT_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -150,7 +150,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>../..;../include/devscan;../../..;../../../jsoncpp/include;$(BOOST_1_57)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;../include/devscan;../..;../../jsoncpp/include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SCANCLIENT_EXPORTS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -170,22 +170,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\hbm\communication\multicastserver.cpp" />
-    <ClCompile Include="..\..\..\hbm\communication\netadapter.cpp" />
-    <ClCompile Include="..\..\..\hbm\communication\netadapterlist.cpp" />
-    <ClCompile Include="..\..\..\hbm\string\split.cpp" />
-    <ClCompile Include="..\..\..\hbm\sys\windows\eventloop.cpp" />
-    <ClCompile Include="..\..\..\hbm\sys\windows\notifier.cpp" />
-    <ClCompile Include="..\..\..\hbm\sys\windows\timer.cpp" />
+    <ClCompile Include="..\..\hbm\communication\multicastserver.cpp" />
+    <ClCompile Include="..\..\hbm\communication\netadapter.cpp" />
+    <ClCompile Include="..\..\hbm\communication\netadapterlist.cpp" />
+    <ClCompile Include="..\..\hbm\string\split.cpp" />
+    <ClCompile Include="..\..\hbm\sys\windows\eventloop.cpp" />
+    <ClCompile Include="..\..\hbm\sys\windows\notifier.cpp" />
+    <ClCompile Include="..\..\hbm\sys\windows\timer.cpp" />
     <ClCompile Include="configureclient.cpp" />
     <ClCompile Include="devicemonitor.cpp" />
     <ClCompile Include="receiver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\hbm\sys\eventloop.h" />
-    <ClInclude Include="..\..\..\hbm\sys\timer.h" />
-    <ClInclude Include="..\common\JsonNames.h" />
-    <ClInclude Include="..\exception\exception.hpp" />
+    <ClInclude Include="..\..\hbm\sys\eventloop.h" />
+    <ClInclude Include="..\..\hbm\sys\timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

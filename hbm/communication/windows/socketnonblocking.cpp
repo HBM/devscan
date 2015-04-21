@@ -50,15 +50,15 @@ hbm::communication::SocketNonblocking::SocketNonblocking(int fd, sys::EventLoop 
 
 hbm::communication::SocketNonblocking::~SocketNonblocking()
 {
-	disconnect();
 	WSACloseEvent(m_event);
+	disconnect();
 }
 
 void hbm::communication::SocketNonblocking::setDataCb(DataCb_t dataCb)
 {
 	m_dataHandler = dataCb;
 	m_eventLoop.eraseEvent(m_event);
-	WSAEventSelect(m_fd, m_event, FD_READ);
+	WSAEventSelect(m_fd, m_event, FD_READ | FD_CLOSE);
 	m_eventLoop.addEvent(m_event, std::bind(&SocketNonblocking::process, this));
 }
 
@@ -220,6 +220,58 @@ ssize_t hbm::communication::SocketNonblocking::receiveComplete(void* pBlock, siz
   return static_cast < ssize_t > (len);
 }
 
+ssize_t hbm::communication::SocketNonblocking::sendBlocks(const dataBlocks_t &blocks)
+{
+	std::vector < WSABUF > buffers(blocks.size());
+
+	size_t completeLength = 0;
+	WSABUF newWsaBuf;
+
+	for (dataBlocks_t::const_iterator iter = blocks.begin(); iter != blocks.end(); ++iter) {
+		const dataBlock_t& item = *iter;
+		newWsaBuf.buf = (CHAR*)item.pData;
+		newWsaBuf.len = item.size;
+		buffers.push_back(newWsaBuf);
+		completeLength += item.size;
+	}
+	DWORD bytesWritten = 0;
+
+	int retVal;
+	
+	retVal = WSASend(m_fd, &buffers[0], buffers.size(), &bytesWritten, 0, NULL, NULL);
+	if (retVal < 0) {
+		int retVal = WSAGetLastError();
+		if ((retVal != WSAEWOULDBLOCK) && (retVal != WSAEINTR) && (retVal != WSAEINPROGRESS)) {
+			return retVal;
+		}
+	}
+
+	if (bytesWritten == completeLength) {
+		// we are done!
+		return bytesWritten;
+	} else {
+		size_t blockSum = 0;
+
+		for (size_t index = 0; index < buffers.size(); ++index) {
+			blockSum += buffers[index].len;
+			if (bytesWritten < blockSum) {
+				// this block was not send completely
+				size_t bytesRemaining = blockSum - bytesWritten;
+				size_t start = buffers[index].len - bytesRemaining;
+				retVal = sendBlock(buffers[index].buf + start, bytesRemaining, false);
+				if (retVal > 0) {
+					bytesWritten += retVal;
+				}
+				else {
+					return -1;
+				}
+			}
+		}
+	}
+	return bytesWritten;
+}
+
+
 ssize_t hbm::communication::SocketNonblocking::sendBlock(const void* pBlock, size_t size, bool more)
 {
 	const uint8_t* pDat = reinterpret_cast<const uint8_t*>(pBlock);
@@ -248,8 +300,8 @@ ssize_t hbm::communication::SocketNonblocking::sendBlock(const void* pBlock, siz
 					retVal = -1;
 				} else {
 					// -1: error
-					// ignore "would block"
-					if(WSAGetLastError()!=WSAEWOULDBLOCK) {
+					int retVal = WSAGetLastError();
+					if( (retVal!=WSAEWOULDBLOCK) && (retVal!=WSAEINTR) && (retVal!=WSAEINPROGRESS) ) {
 						BytesLeft = 0;
 						retVal = -1;
 					}
@@ -270,37 +322,6 @@ ssize_t hbm::communication::SocketNonblocking::sendBlock(const void* pBlock, siz
 	return retVal;
 }
 
-
-bool hbm::communication::SocketNonblocking::checkSockAddr(const struct ::sockaddr* pCheckSockAddr, socklen_t checkSockAddrLen) const
-{
-	struct sockaddr sockAddr;
-	socklen_t addrLen = sizeof(sockaddr_in);
-
-	char checkHost[256];
-	char ckeckService[8];
-
-	char host[256];
-	char service[8];
-	int err = getnameinfo(pCheckSockAddr, checkSockAddrLen, checkHost, sizeof(checkHost), ckeckService, sizeof(ckeckService), NI_NUMERICHOST | NI_NUMERICSERV);
-	if (err != 0) {
-		return false;
-	}
-
-	getpeername(m_fd, &sockAddr, &addrLen);
-
-	getnameinfo(&sockAddr, addrLen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV);
-
-	if(
-		(strcmp(host, checkHost)==0) &&
-		(strcmp(service, ckeckService)==0)
-		)
-	{
-		return true;
-	}
-	return false;
-}
-
-
 void hbm::communication::SocketNonblocking::disconnect()
 {
 	m_eventLoop.eraseEvent(m_event);
@@ -311,5 +332,29 @@ void hbm::communication::SocketNonblocking::disconnect()
 
 bool hbm::communication::SocketNonblocking::isFirewire() const
 {
+	return false;
+}
+
+bool hbm::communication::SocketNonblocking::checkSockAddr(const struct ::sockaddr* pCheckSockAddr, socklen_t checkSockAddrLen) const
+{
+	struct sockaddr sockAddr;
+	socklen_t addrLen = sizeof(sockaddr_in);
+	char checkHost[256];
+	char ckeckService[8];
+	char host[256];
+	char service[8];
+	int err = getnameinfo(pCheckSockAddr, checkSockAddrLen, checkHost, sizeof(checkHost), ckeckService, sizeof(ckeckService), NI_NUMERICHOST | NI_NUMERICSERV);
+	if (err != 0) {
+		return false;
+	}
+	getpeername(m_fd, &sockAddr, &addrLen);
+	getnameinfo(&sockAddr, addrLen, host, sizeof(host), service, sizeof(service), NI_NUMERICHOST | NI_NUMERICSERV);
+	if (
+		(strcmp(host, checkHost) == 0) &&
+		(strcmp(service, ckeckService) == 0)
+		)
+	{
+		return true;
+	}
 	return false;
 }

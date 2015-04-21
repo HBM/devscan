@@ -87,7 +87,7 @@
     <ClCompile Include="..\..\sys\windows\eventloop.cpp" />
     <ClCompile Include="..\bufferedreader.cpp" />
     <ClCompile Include="..\windows\socketnonblocking.cpp" />
-    <ClCompile Include="..\windows\tcpacceptor.cpp" />
+    <ClCompile Include="..\windows\tcpserver.cpp" />
     <ClCompile Include="socketnonblocking_test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

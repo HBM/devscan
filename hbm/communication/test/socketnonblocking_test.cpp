@@ -42,6 +42,7 @@ namespace hbm {
 			serverFixture::~serverFixture()
 			{
 				BOOST_TEST_MESSAGE("teardown Fixture1");
+				m_workers.clear();
 				m_eventloop.stop();
 				m_serverWorker.join();
 			}
@@ -118,6 +119,53 @@ namespace hbm {
 				client.disconnect();
 
 				BOOST_CHECK_EQUAL(getAnswer(), msg);
+
+
+				eventloop.stop();
+				worker.join();
+			}
+
+			BOOST_AUTO_TEST_CASE(writev_test)
+			{
+				int result;
+				static const size_t bufferSize = 100000;
+				static const size_t blockCount = 10;
+				static const size_t blockSize = bufferSize/blockCount;
+				char buffer[bufferSize] = "a";
+
+				hbm::communication::dataBlock_t dataBlocks[blockCount];
+
+				for(unsigned int i=0; i<blockCount; ++i) {
+					dataBlocks[i].size = blockSize;
+					dataBlocks[i].pData = &buffer[i*blockSize];
+				}
+
+				hbm::sys::EventLoop eventloop;
+				std::thread worker(std::bind(&hbm::sys::EventLoop::execute, std::ref(eventloop)));
+
+				hbm::communication::SocketNonblocking client(eventloop);
+				result = client.connect("127.0.0.1", std::to_string(PORT));
+				BOOST_CHECK_NE(result, -1);
+
+//				// force a small send buffer
+//				int val;
+//				socklen_t len;
+//				result = getsockopt(client.getFd(), SOL_SOCKET, SO_SNDBUF, &val, &len);
+//				val = 1;
+//				result = setsockopt(client.getFd(), SOL_SOCKET, SO_SNDBUF, &val, sizeof(val));
+//				BOOST_CHECK_NE(result, -1);
+//				result = getsockopt(client.getFd(), SOL_SOCKET, SO_SNDBUF, &val, &len);
+//				BOOST_CHECK_NE(result, -1);
+
+				client.setDataCb(std::bind(&serverFixture::clientReceive, this, std::placeholders::_1));
+
+				clearAnswer();
+				result = client.sendBlocks(dataBlocks, blockCount);
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				//BOOST_CHECK_EQUAL(result, sizeof(msg));
+				client.disconnect();
+
+				//BOOST_CHECK_EQUAL(getAnswer(), msg);
 
 
 				eventloop.stop();

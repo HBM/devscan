@@ -88,7 +88,7 @@ namespace hbm {
 		{
 			workerSocket_t worker = acceptClient();
 			if (!worker) {
-				return -1;
+				return 0;
 			}
 
 			if (m_acceptCb) {

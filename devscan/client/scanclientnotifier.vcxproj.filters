@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="scanclientnotifier.cpp" />
-    <ClCompile Include="..\..\hbm\string\split.cpp">
+    <ClCompile Include="..\hbm\string\split.cpp">
       <Filter>hbm\string</Filter>
     </ClCompile>
   </ItemGroup>

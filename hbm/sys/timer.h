@@ -15,11 +15,11 @@
 
 namespace hbm {
 	namespace sys {
-		/// A timer running periodically. Starts when setting the period. Event gets signaled when period is reached.
+		/// A timer running periodically or in single-shot-mode. Starts when setting the period. Callback routine gets called when period elapsed or running timer gets canceled.
 		class Timer {
 		public:
 			/// called when timer fires or is being cancled
-			/// \param false if timer got cancled; fired true timer fired
+			/// \param false if timer got canceled; true if timer fired
 			typedef std::function < void (bool fired) > Cb_t;
 
 			/// \throws hbm::exception
@@ -33,7 +33,7 @@ namespace hbm {
 			int set(unsigned int period_ms, bool repeated, Cb_t eventHandler);
 			int set(std::chrono::milliseconds period, bool repeated, Cb_t eventHandler);
 
-			/// timer will not signal, wait will block.
+			/// if timer is running, callback routine will be called with fired=false
 			/// \return 1 success, timer was running; 0 success
 			int cancel();
 

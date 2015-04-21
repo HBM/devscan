@@ -24,6 +24,7 @@
 
 namespace hbm {
 	namespace sys {
+		/// The event loop is not responsible for handling errors returned by any callback routine. Error handling is to be done by the callback routine itself.
 		class EventLoop {
 		public:
 			/// \throws hbm::exception
@@ -31,6 +32,8 @@ namespace hbm {
 			virtual ~EventLoop();
 
 			/// existing event handler of an fd will be replaced
+			/// \param fd a non-blocking file descriptor to observe
+			/// \param EventHandler_t callback function to be called if file descriptor gets signaled.
 			void addEvent(event fd, EventHandler_t eventHandler);
 
 			void eraseEvent(event fd);
@@ -65,7 +68,7 @@ namespace hbm {
 
 			/// events to be added/removed go in here
 			changelist_t m_changeList;
-			std::mutex m_changeListMtx;
+			std::recursive_mutex m_changeListMtx;
 
 			/// events handled by event loop
 			eventInfos_t m_eventInfos;
