@@ -14,21 +14,6 @@
 
 namespace hbm {
 	namespace sys {
-
-		//VOID
-		//	(APIENTRY *PTIMERAPCROUTINE)(
-		//	_In_opt_ LPVOID lpArgToCompletionRoutine,
-		//	_In_     DWORD dwTimerLowValue,
-		//	_In_     DWORD dwTimerHighValue
-		//	);
-
-		//static VOID CALLBACK resetRunningFlag(LPVOID lpArgToCompletionRoutine, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
-		//{
-		//	Timer* pTimer = reinterpret_cast < Timer* > (lpArgToCompletionRoutine);
-
-		//	pTimer->cancel();
-		//}
-
 		Timer::Timer(EventLoop& eventLoop)
 			: m_fd(CreateWaitableTimer(NULL, FALSE, NULL))
 			, m_eventLoop(eventLoop)
@@ -69,7 +54,6 @@ namespace hbm {
 				&dueTime,
 				period,
 				NULL,
-				//&resetRunningFlag,
 				this,
 				FALSE
 				);

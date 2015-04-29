@@ -282,17 +282,32 @@ namespace hbm {
 
 			if(add) {
 				if(retVal!=0) {
+#ifdef _WIN32
+					if (errno == WSAEADDRINUSE) {
+						// ignore already added
+						return 0;
+					}
+#else
 					if(errno==EADDRINUSE) {
 						// ignore already added
 						return 0;
 					}
+#endif
+
 				}
 			} else {
 				if(retVal!=0) {
-					if(errno==EADDRNOTAVAIL) {
+#ifdef _WIN32
+					if (errno == WSAEADDRNOTAVAIL) {
 						// ignore already dropped
 						return 0;
 					}
+#else
+					if (errno == EADDRNOTAVAIL) {
+						// ignore already dropped
+						return 0;
+					}
+#endif
 				}
 			}
 
@@ -619,10 +634,12 @@ namespace hbm {
 				return err;
 			}
 
-			err = setupReceiveSocket();
-			if(err<0) {
-				return err;
-			}
+//			if (dataHandler) {
+				err = setupReceiveSocket();
+				if(err<0) {
+					return err;
+				}
+//			}
 
 			m_dataHandler = dataHandler;
 			if (dataHandler) {

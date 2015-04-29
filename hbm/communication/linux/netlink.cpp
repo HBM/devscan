@@ -6,10 +6,16 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
+
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
 #include <syslog.h>
+#include <stdint.h>
 
 #include <unistd.h>
 
@@ -18,11 +24,13 @@
 #include "hbm/communication/netlink.h"
 #include "hbm/exception/exception.hpp"
 
+const unsigned int MAX_DATAGRAM_SIZE = 65536;
+
+
 namespace hbm {
-	Netlink::Netlink(communication::NetadapterList &netadapterlist, communication::MulticastServer &mcs, sys::EventLoop &eventLoop)
+	Netlink::Netlink(communication::NetadapterList &netadapterlist, sys::EventLoop &eventLoop)
 		: m_fd(socket(AF_NETLINK, SOCK_RAW | SOCK_NONBLOCK, NETLINK_ROUTE))
 		, m_netadapterlist(netadapterlist)
-		, m_mcs(mcs)
 		, m_eventloop(eventLoop)
 	{
 		if (m_fd<0) {
@@ -46,7 +54,7 @@ namespace hbm {
 		stop();
 	}
 
-	ssize_t Netlink::receive(char *pReadBuffer, size_t bufferSize) const
+	ssize_t Netlink::receive(void *pReadBuffer, size_t bufferSize) const
 	{
 		struct sockaddr_nl nladdr;
 		struct iovec iov = {
@@ -62,7 +70,7 @@ namespace hbm {
 		return ::recvmsg(m_fd, &msg, 0);
 	}
 
-	void Netlink::processNetlinkTelegram(char *pReadBuffer, size_t bufferSize) const
+	void Netlink::processNetlinkTelegram(void *pReadBuffer, size_t bufferSize) const
 	{
 		for (struct nlmsghdr *nh = reinterpret_cast <struct nlmsghdr *> (pReadBuffer); NLMSG_OK (nh, bufferSize); nh = NLMSG_NEXT (nh, bufferSize)) {
 			if (nh->nlmsg_type == NLMSG_DONE) {
@@ -86,9 +94,10 @@ namespace hbm {
 									try {
 										communication::Netadapter adapter = m_netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
 										if(adapter.getIpv4Addresses().size()==1) {
-											struct in_addr* pIn = reinterpret_cast < struct in_addr* > (RTA_DATA(rth));
-											std::string interfaceAddress = inet_ntoa(*pIn);
-											m_mcs.addInterface(interfaceAddress);
+											if (m_eventHandler) {
+												struct in_addr* pIn = reinterpret_cast < struct in_addr* > (RTA_DATA(rth));
+												m_eventHandler(NEW, pIfaddrmsg->ifa_index, inet_ntoa(*pIn));
+											}
 										}
 									} catch(const hbm::exception::exception&) {
 									}
@@ -106,13 +115,15 @@ namespace hbm {
 							int rtl = IFA_PAYLOAD(nh);
 							while (rtl && RTA_OK(rth, rtl)) {
 								if (rth->rta_type == IFA_LOCAL) {
+
 									// this is to be ignored if there is another ipv4 address left for the interface!
 									try {
 										communication::Netadapter adapter = m_netadapterlist.getAdapterByInterfaceIndex(pIfaddrmsg->ifa_index);
 										if(adapter.getIpv4Addresses().empty()==true) {
-											const struct in_addr* pIn = reinterpret_cast < const struct in_addr* > (RTA_DATA(rth));
-											std::string interfaceAddress = inet_ntoa(*pIn);
-											m_mcs.dropInterface(interfaceAddress);
+											if (m_eventHandler) {
+												struct in_addr* pIn = reinterpret_cast < struct in_addr* > (RTA_DATA(rth));
+												m_eventHandler(NEW, pIfaddrmsg->ifa_index, inet_ntoa(*pIn));
+											}
 										}
 									} catch(const hbm::exception::exception&) {
 									}
@@ -129,22 +140,24 @@ namespace hbm {
 		}
 	}
 
-	ssize_t Netlink::process() const
+	ssize_t Netlink::process()
 	{
-		char readBuffer[communication::MAX_DATAGRAM_SIZE];
+		uint8_t readBuffer[MAX_DATAGRAM_SIZE];
 		ssize_t nBytes = receive(readBuffer, sizeof(readBuffer));
 		if (nBytes>0) {
 			processNetlinkTelegram(readBuffer, nBytes);
-			if(m_eventHandler) {
-				m_eventHandler();
-			}
 		}
 		return nBytes;
 	}
 
-	int Netlink::start(sys::EventHandler_t eventHandler)
+
+	int Netlink::start(cb_t eventHandler)
 	{
 		m_eventHandler = eventHandler;
+		if (m_eventHandler) {
+			m_eventHandler(COMPLETE, 0, "");
+		}
+
 		m_eventloop.addEvent(m_fd, std::bind(&Netlink::process, this));
 		return 0;
 	}

@@ -173,6 +173,7 @@
     <ClCompile Include="..\..\hbm\communication\multicastserver.cpp" />
     <ClCompile Include="..\..\hbm\communication\netadapter.cpp" />
     <ClCompile Include="..\..\hbm\communication\netadapterlist.cpp" />
+    <ClCompile Include="..\..\hbm\communication\windows\netlink.cpp" />
     <ClCompile Include="..\..\hbm\string\split.cpp" />
     <ClCompile Include="..\..\hbm\sys\windows\eventloop.cpp" />
     <ClCompile Include="..\..\hbm\sys\windows\notifier.cpp" />
@@ -182,6 +183,7 @@
     <ClCompile Include="receiver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\hbm\communication\netlink.h" />
     <ClInclude Include="..\..\hbm\sys\eventloop.h" />
     <ClInclude Include="..\..\hbm\sys\timer.h" />
   </ItemGroup>

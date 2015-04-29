@@ -25,6 +25,9 @@
     <ClCompile Include="..\..\hbm\string\split.cpp">
       <Filter>hbm\string</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\hbm\communication\windows\netlink.cpp">
+      <Filter>hbm\communication\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="common">
@@ -48,6 +51,9 @@
     <Filter Include="hbm\string">
       <UniqueIdentifier>{8d7bc7f7-e5e1-4fea-ae88-c60444043ab5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hbm\communication\windows">
+      <UniqueIdentifier>{478df09c-3441-4083-b200-47c71ad4af47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\hbm\sys\eventloop.h">
@@ -55,6 +61,9 @@
     </ClInclude>
     <ClInclude Include="..\..\hbm\sys\timer.h">
       <Filter>hbm\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\hbm\communication\netlink.h">
+      <Filter>hbm\communication</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

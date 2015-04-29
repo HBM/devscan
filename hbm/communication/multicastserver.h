@@ -62,6 +62,7 @@ namespace hbm {
 			/// all interfaces known to the internal netadapter list are dropped as receiving interfaces.
 			void dropAllInterfaces();
 
+			/// @param dataHandler set to empty(DataHandler_t()) if object is used as sender only.
 			int start(const std::string& address, unsigned int port, DataHandler_t dataHandler);
 
 			void stop();

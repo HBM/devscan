@@ -23,9 +23,7 @@ namespace hbm {
 			: m_netadapterList()
 			, m_scanner(m_netadapterList, m_eventloop)
 			, m_timer(m_eventloop)
-#ifndef _WIN32
-			, m_netlink(m_netadapterList, m_scanner, m_eventloop)
-#endif
+			, m_netlink(m_netadapterList, m_eventloop)
 		{
 		}
 
@@ -36,11 +34,29 @@ namespace hbm {
 			int ttl;
 			std::string adapterName;
 			ssize_t nBytes = pMcs->receiveTelegram(readBuffer, sizeof(readBuffer), adapterName, ttl);
-//			std::cerr << "Receiver::receiveEventHandler len=" << nBytes << ": \"" << readBuffer << "\"" << std::endl;
 			if(nBytes > 0) {
 				m_deviceMonitor.processReceivedAnnouncement(adapterName, std::string(readBuffer, nBytes));
 			}
 			return nBytes;
+		}
+
+		void Receiver::netLinkEventHandler(Netlink::event_t event, unsigned int adapterIndex, const std::string& ipv4Address)
+		{
+			switch (event) {
+			case hbm::Netlink::NEW:
+				try {
+					communication::Netadapter adapter = m_netadapterList.getAdapterByInterfaceIndex(adapterIndex);
+					m_scanner.addInterface(ipv4Address);
+				}
+				catch (...) {
+				}
+				break;
+			case hbm::Netlink::DEL:
+				m_scanner.dropInterface(ipv4Address);
+			case hbm::Netlink::COMPLETE:
+				m_scanner.dropAllInterfaces();
+				m_scanner.addAllInterfaces();
+			}
 		}
 
 		void Receiver::setAnnounceCb(announceCb_t cb)
@@ -65,7 +81,7 @@ namespace hbm {
 		{
 			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
 			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredTimerCb, std::ref(m_deviceMonitor), std::placeholders::_1));
-			m_scanner.addAllInterfaces();
+			m_netlink.start(std::bind(&Receiver::netLinkEventHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 			m_eventloop.execute();
 		}
 
@@ -74,16 +90,14 @@ namespace hbm {
 		{
 			m_scanner.start(ANNOUNCE_IPV4_ADDRESS, ANNOUNCE_UDP_PORT, std::bind(&Receiver::receiveEventHandler, this, std::placeholders::_1));
 			m_timer.set(1000, true, std::bind(&DeviceMonitor::checkForExpiredTimerCb, std::ref(m_deviceMonitor), std::placeholders::_1));
-			m_scanner.addAllInterfaces();
+			m_netlink.start(std::bind(&Receiver::netLinkEventHandler, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 			m_eventloop.execute_for(timeOfExecution);
 		}
 
 		void Receiver::stop()
 		{
 			m_eventloop.stop();
-#ifndef _WIN32
 			m_netlink.stop();
-#endif
 			m_scanner.stop();
 			m_timer.cancel();
 

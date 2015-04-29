@@ -12,9 +12,7 @@
 
 #include "hbm/communication/multicastserver.h"
 #include "hbm/communication/netadapterlist.h"
-#ifndef _WIN32
 #include "hbm/communication/netlink.h"
-#endif
 #include "hbm/sys/eventloop.h"
 #include "hbm/sys/timer.h"
 
@@ -63,11 +61,9 @@ namespace hbm {
 			sys::Timer m_timer;
 			DeviceMonitor m_deviceMonitor;
 
-#ifndef _WIN32
 			Netlink m_netlink;
-
-			ssize_t netLinkEventHandler();
-#endif
+			
+			void netLinkEventHandler(Netlink::event_t event, unsigned int adapterIndex, const std::string& ipv4Address);
 			ssize_t receiveEventHandler(communication::MulticastServer *pMcs);
 			ssize_t retireEventHandler();
 		};
