@@ -25,13 +25,14 @@ endif(Boost_FOUND)
 
 
 include_directories(../../..) #hbm/commuc...
-include_directories(../..) #devscan
+#include_directories(../..) #devscan
+include_directories(../)
 include_directories(../include)
 include_directories(../../../jsoncpp/include)
 
 add_subdirectory(../../../jsoncpp ${PROJECT_BINARY_DIR}/jsoncpp)
 
-#add_definitions("-std=c++0x --coverage")
+#add_definitions("--coverage")
 
 add_subdirectory(../lib ${PROJECT_BINARY_DIR}/lib)
 
@@ -55,6 +56,8 @@ set(SOURCES_DEVICEMONITORTEST
     devicemonitortest.cpp
 )
 
+
+SET(CMAKE_CXX_FLAGS "-std=c++0x" CACHE STRING "" FORCE)
 
 add_executable( devicemonitor.test ${SOURCES_DEVICEMONITORTEST} )
 
