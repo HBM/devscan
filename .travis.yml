@@ -21,8 +21,7 @@ before_install:
 
 script:
   - $CXX --version
-  - cd devscan && cmake . && make
-  - cd client/test && cmake . && make
+  - cd devscanclient/test && cmake . && make
   - ./devicemonitor.test
 
 
