@@ -22,7 +22,9 @@ include_directories(include)
 
 add_subdirectory(../../jsoncpp ${PROJECT_BINARY_DIR}/jsoncpp)
 
-#add_subdirectory(test ${PROJECT_BINARY_DIR}/test)
+enable_testing()
+
+add_subdirectory(test ${PROJECT_BINARY_DIR}/test)
 
 # the library with all client specific stuff
 add_subdirectory(lib ${PROJECT_BINARY_DIR}/lib)
