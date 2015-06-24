@@ -9,6 +9,7 @@ set( INTERFACE_INCLUDE_DIR ../include/devscan)
 include_directories(${INTERFACE_INCLUDE_DIR})
 
 SET( INTERFADE_HEADERS
+    ${INTERFACE_INCLUDE_DIR}/defines.h
     ${INTERFACE_INCLUDE_DIR}/configureclient.h
     ${INTERFACE_INCLUDE_DIR}/devicemonitor.h
     ${INTERFACE_INCLUDE_DIR}/receiver.h
