@@ -16,11 +16,10 @@ message(STATUS "CppCheck            : " ${WITH_CPPCHECK})
 message(STATUS "-----------------------------------------------------------")
 
 include_directories(..)
-include_directories(../..)
-include_directories(../../jsoncpp/include)
+include_directories(../jsoncpp/include)
 include_directories(include)
 
-add_subdirectory(../../jsoncpp ${PROJECT_BINARY_DIR}/jsoncpp)
+add_subdirectory(../jsoncpp ${PROJECT_BINARY_DIR}/jsoncpp)
 
 enable_testing()
 
