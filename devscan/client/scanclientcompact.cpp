@@ -13,7 +13,7 @@
 #include "hbm/jsonrpc/jsonrpc_defines.h"
 
 #include "devscan/receiver.h"
-#include "defines.h"
+#include "devscan/defines.h"
 
 
 using namespace hbm::devscan;
