@@ -24,8 +24,7 @@
 #include "devscan/receiver.h"
 #include "devscan/configureclient.h"
 
-#include "defines.h"
-//#include "common/JetNames.h"
+#include "devscan/defines.h"
 
 #include "scanclienttest.h"
 

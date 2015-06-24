@@ -25,8 +25,7 @@
 
 #include "devscan/receiver.h"
 #include "devscan/configureclient.h"
-
-#include "defines.h"
+#include "devscan/defines.h"
 
 #include "devicemonitortest.h"
 
