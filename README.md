@@ -1,3 +1,6 @@
+# $${\color{red}MOVED}$$
+# https://github.com/hbkworld/devscan
+
 # HBM Device Scan (devscan) Client Examples
 Implements an HBM Device Scan Client and some simple example programs using C++.
 
